@@ -1,7 +1,6 @@
 import 'reflect-metadata';
 import express from 'express';
 import { SqlDataSource } from './utils/db';
-import { User } from './entity/User.model';
 
 const app = express();
 

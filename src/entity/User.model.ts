@@ -4,12 +4,15 @@ import {
     Column,
     CreateDateColumn,
     UpdateDateColumn,
+    OneToMany,
 } from 'typeorm';
+import { Connection } from './Connection.model';
+import { RoomUser } from './RoomUser.model';
 
 @Entity()
 export class User {
     @PrimaryGeneratedColumn()
-    public id: number;
+    public id: string;
 
     @Column()
     public username: string;
@@ -19,6 +22,12 @@ export class User {
 
     @Column()
     public password: string;
+
+    @OneToMany(() => RoomUser, (roomUser) => roomUser.user)
+    public rooms: RoomUser[];
+
+    @OneToMany(() => Connection, (connection) => connection.user)
+    public connections: Connection[];
 
     @CreateDateColumn({
         type: 'timestamp',

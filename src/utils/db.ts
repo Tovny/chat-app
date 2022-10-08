@@ -3,6 +3,8 @@ import { Room } from '../entity/Room.model';
 import { User } from '../entity/User.model';
 import { Message } from '../entity/Message.model';
 import { config } from 'dotenv';
+import { Connection } from '../entity/Connection.model';
+import { RoomUser } from '../entity/RoomUser.model';
 
 config();
 
@@ -16,7 +18,7 @@ export const SqlDataSource = new DataSource({
     synchronize: false,
     migrationsRun: false,
     logging: true,
-    entities: [User, Room, Message],
+    entities: [User, Room, Message, Connection, RoomUser],
     subscribers: [],
     migrations: ['../migrations/**'],
 });

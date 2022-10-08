@@ -8,7 +8,7 @@ import {
 const sharedColumns: TableColumnOptions[] = [
     {
         name: 'id',
-        type: 'integer',
+        type: 'text',
         isPrimary: true,
         isGenerated: true,
         generationStrategy: 'uuid',
@@ -52,6 +52,20 @@ const userTable = new Table({
             isNullable: false,
         },
     ],
+    foreignKeys: [
+        {
+            referencedTableName: 'roomUsers',
+            columnNames: ['rooms'],
+            referencedColumnNames: ['user'],
+            onDelete: 'cascade',
+        },
+        {
+            referencedTableName: 'connections',
+            columnNames: ['connections'],
+            referencedColumnNames: ['user'],
+            onDelete: 'cascade',
+        },
+    ],
 });
 
 const roomTable = new Table({
@@ -84,18 +98,88 @@ const messageTable = new Table({
             isNullable: false,
         },
     ],
+    foreignKeys: [
+        {
+            referencedTableName: 'rooms',
+            columnNames: ['room'],
+            referencedColumnNames: ['messages'],
+        },
+    ],
 });
+
+const connectionTable = new Table({
+    name: 'connections',
+    columns: [
+        {
+            name: 'id',
+            type: 'integer',
+            isPrimary: true,
+            isGenerated: true,
+            generationStrategy: 'increment',
+        },
+        { name: 'userID', type: 'text', isNullable: false },
+        { name: 'connectionID', type: 'text', isNullable: false },
+    ],
+    foreignKeys: [
+        {
+            referencedTableName: 'users',
+            columnNames: ['user'],
+            referencedColumnNames: ['connections'],
+        },
+    ],
+});
+
+const roomUserTable = new Table({
+    name: 'connections',
+    columns: [
+        {
+            name: 'id',
+            type: 'integer',
+            isPrimary: true,
+            isGenerated: true,
+            generationStrategy: 'increment',
+        },
+        { name: 'userID', type: 'text' },
+        { name: 'roomID', type: 'text' },
+        {
+            name: 'created_at',
+            type: 'timestamptz',
+            isNullable: false,
+            default: 'now()',
+        },
+    ],
+    foreignKeys: [
+        {
+            referencedTableName: 'users',
+            columnNames: ['user'],
+            referencedColumnNames: ['rooms'],
+        },
+        {
+            referencedTableName: 'rooms',
+            columnNames: ['rooms'],
+            referencedColumnNames: ['users'],
+        },
+    ],
+});
+
+const tables = [
+    userTable,
+    roomTable,
+    messageTable,
+    connectionTable,
+    roomUserTable,
+];
 
 export class Initial1665232666748 implements MigrationInterface {
     public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.createTable(userTable);
-        await queryRunner.createTable(roomTable);
-        await queryRunner.createTable(messageTable);
+        Promise.all(
+            tables.map(async (table) => await queryRunner.createTable(table))
+        );
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.dropTable(userTable);
-        await queryRunner.dropTable(roomTable);
-        await queryRunner.dropTable(messageTable);
+        Promise.all(
+            tables.map(async (table) => await queryRunner.dropTable(table))
+        );
     }
 }

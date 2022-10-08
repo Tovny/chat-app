@@ -4,18 +4,27 @@ import {
     Column,
     CreateDateColumn,
     UpdateDateColumn,
+    OneToMany,
 } from 'typeorm';
+import { Message } from './Message.model';
+import { RoomUser } from './RoomUser.model';
 
 @Entity()
 export class Room {
     @PrimaryGeneratedColumn()
-    public id: number;
+    public id: string;
 
     @Column()
     public name: string;
 
-    @Column({ nullable: true })
+    @Column()
     public password: string;
+
+    @OneToMany(() => RoomUser, (roomUser) => roomUser.room)
+    public users: RoomUser[];
+
+    @OneToMany(() => Message, (message) => message.room)
+    public messages: Message[];
 
     @CreateDateColumn({
         type: 'timestamp',

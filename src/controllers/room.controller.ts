@@ -15,7 +15,7 @@ export const getUserRooms = async (
 ) => {
     try {
         const rooms = await SqlDataSource.getRepository(RoomUser)
-            .createQueryBuilder('data')
+            .createQueryBuilder('roomUser')
             .innerJoinAndSelect(User, 'user')
             .innerJoinAndSelect(Room, 'room')
             .where('user.id = :id', { id: req.user.id })
@@ -34,13 +34,14 @@ export const getRoom = async (
     const { id } = req.params;
     try {
         const room = await SqlDataSource.getRepository(RoomUser)
-            .createQueryBuilder('data')
-            .innerJoinAndSelect(User, 'user')
-            .innerJoinAndSelect(Room, 'room')
-            .innerJoinAndSelect(Message, 'message')
+            .createQueryBuilder('roomUser')
+            .leftJoinAndSelect('roomUser.user', 'user')
+            .leftJoinAndSelect('roomUser.room', 'room')
+            .leftJoinAndSelect('room.messages', 'message')
             .where('room.id = :roomID', { roomID: id })
             .andWhere('user.id = :userID', { userID: req.user.id })
             .execute();
+
         res.json(room);
     } catch (err) {
         handleError(err, 500, next);
@@ -54,10 +55,33 @@ export const postCreateRoom = async (
 ) => {
     const { name, password } = req.body;
     try {
-        const hashedPass = await hash(password, process.env.HASH_ROUNDS);
+        const hashedPass = await hash(
+            password,
+            Number(process.env.HASH_ROUNDS)
+        );
         const repo = SqlDataSource.getRepository(Room);
         const newRoom = repo.create({ name, password: hashedPass });
         const response = await repo.save(newRoom);
+        res.json(response);
+    } catch (err) {
+        handleError(err, 500, next);
+    }
+};
+
+export const postJoinRoom = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const { id } = req.params;
+
+    try {
+        const room = await SqlDataSource.getRepository(Room).findOneBy({
+            id: id,
+        });
+        const repo = SqlDataSource.getRepository(RoomUser);
+        const newRoomUser = repo.create({ user: req.user, room: room });
+        const response = await repo.save(newRoomUser);
         res.json(response);
     } catch (err) {
         handleError(err, 500, next);
@@ -70,9 +94,13 @@ export const postRoomMessage = async (
     next: NextFunction
 ) => {
     const { content } = req.body;
-    const { id } = req.query;
+    const { id } = req.params;
     try {
-        const room = await SqlDataSource.getRepository(Room);
+        const repo = SqlDataSource.getRepository(Message);
+        const room = await SqlDataSource.getRepository(Room).findOneBy({ id });
+        const newMessage = repo.create({ content, user: req.user, room: room });
+        const response = await repo.save(newMessage);
+        res.json(response);
     } catch (err) {
         handleError(err, 500, next);
     }

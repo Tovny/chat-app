@@ -54,13 +54,12 @@ const userTable = new Table({
     ],
     foreignKeys: [
         {
-            referencedTableName: 'roomUsers',
+            referencedTableName: 'rooms',
             columnNames: ['rooms'],
-            referencedColumnNames: ['user'],
-            onDelete: 'cascade',
+            referencedColumnNames: ['users'],
         },
         {
-            referencedTableName: 'roomMessages',
+            referencedTableName: 'messages',
             columnNames: ['messages'],
             referencedColumnNames: ['user'],
         },
@@ -68,7 +67,6 @@ const userTable = new Table({
             referencedTableName: 'connections',
             columnNames: ['connections'],
             referencedColumnNames: ['user'],
-            onDelete: 'cascade',
         },
     ],
 });
@@ -93,16 +91,14 @@ const roomTable = new Table({
     ],
     foreignKeys: [
         {
-            referencedTableName: 'roomUsers',
+            referencedTableName: 'users',
             columnNames: ['users'],
-            referencedColumnNames: ['room'],
-            onDelete: 'cascade',
+            referencedColumnNames: ['rooms'],
         },
         {
-            referencedTableName: 'roomMessages',
+            referencedTableName: 'messages',
             columnNames: ['messages'],
             referencedColumnNames: ['room'],
-            onDelete: 'cascade',
         },
     ],
 });
@@ -119,9 +115,14 @@ const messageTable = new Table({
     ],
     foreignKeys: [
         {
-            referencedTableName: 'roomMessages',
+            referencedTableName: 'users',
+            columnNames: ['user'],
+            referencedColumnNames: ['messages'],
+        },
+        {
+            referencedTableName: 'rooms',
             columnNames: ['room'],
-            referencedColumnNames: ['message'],
+            referencedColumnNames: ['messages'],
         },
     ],
 });
@@ -142,86 +143,12 @@ const connectionTable = new Table({
             referencedTableName: 'users',
             columnNames: ['user'],
             referencedColumnNames: ['connections'],
-        },
-    ],
-});
-
-const roomUserTable = new Table({
-    name: 'roomUsers',
-    columns: [
-        {
-            name: 'id',
-            type: 'integer',
-            isPrimary: true,
-            isGenerated: true,
-            generationStrategy: 'increment',
-        },
-        {
-            name: 'created_at',
-            type: 'timestamptz',
-            isNullable: false,
-            default: 'now()',
-        },
-    ],
-    foreignKeys: [
-        {
-            referencedTableName: 'users',
-            columnNames: ['user'],
-            referencedColumnNames: ['rooms'],
-        },
-        {
-            referencedTableName: 'rooms',
-            columnNames: ['room'],
-            referencedColumnNames: ['users'],
-        },
-    ],
-});
-
-const roomMessageTable = new Table({
-    name: 'roomMessages',
-    columns: [
-        {
-            name: 'id',
-            type: 'integer',
-            isPrimary: true,
-            isGenerated: true,
-            generationStrategy: 'increment',
-        },
-        {
-            name: 'created_at',
-            type: 'timestamptz',
-            isNullable: false,
-            default: 'now()',
-        },
-    ],
-    foreignKeys: [
-        {
-            referencedTableName: 'messages',
-            columnNames: ['message'],
-            referencedColumnNames: ['room'],
             onDelete: 'cascade',
         },
-        {
-            referencedTableName: 'users',
-            columnNames: ['user'],
-            referencedColumnNames: ['messages'],
-        },
-        {
-            referencedTableName: 'rooms',
-            columnNames: ['room'],
-            referencedColumnNames: ['messages'],
-        },
     ],
 });
 
-const tables = [
-    userTable,
-    roomTable,
-    messageTable,
-    connectionTable,
-    roomUserTable,
-    roomMessageTable,
-];
+const tables = [userTable, roomTable, messageTable, connectionTable];
 
 export class Initial1665232666748 implements MigrationInterface {
     public async up(queryRunner: QueryRunner): Promise<void> {

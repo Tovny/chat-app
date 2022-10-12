@@ -2,7 +2,6 @@ import { hash } from 'bcrypt';
 import { NextFunction, Response } from 'express';
 import { Message } from '../entity/Message.model';
 import { Room } from '../entity/Room.model';
-import { RoomUser } from '../entity/RoomUser.model';
 import { User } from '../entity/User.model';
 import { Request } from '../types';
 import { SqlDataSource } from '../utils/db.util';
@@ -14,9 +13,8 @@ export const getUserRooms = async (
     next: NextFunction
 ) => {
     try {
-        const rooms = await SqlDataSource.getRepository(RoomUser)
-            .createQueryBuilder('data')
-            .innerJoinAndSelect(User, 'user')
+        const rooms = await SqlDataSource.getRepository(User)
+            .createQueryBuilder()
             .innerJoinAndSelect(Room, 'room')
             .where('user.id = :id', { id: req.user.id })
             .execute();
@@ -33,10 +31,9 @@ export const getRoom = async (
 ) => {
     const { id } = req.params;
     try {
-        const room = await SqlDataSource.getRepository(RoomUser)
-            .createQueryBuilder('data')
+        const room = await SqlDataSource.getRepository(Room)
+            .createQueryBuilder()
             .innerJoinAndSelect(User, 'user')
-            .innerJoinAndSelect(Room, 'room')
             .innerJoinAndSelect(Message, 'message')
             .where('room.id = :roomID', { roomID: id })
             .andWhere('user.id = :userID', { userID: req.user.id })
@@ -59,6 +56,20 @@ export const postCreateRoom = async (
         const newRoom = repo.create({ name, password: hashedPass });
         const response = await repo.save(newRoom);
         res.json(response);
+    } catch (err) {
+        handleError(err, 500, next);
+    }
+};
+
+export const postRoomMessage = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const { content } = req.body;
+    const { id } = req.query;
+    try {
+        const room = await SqlDataSource.getRepository(Room);
     } catch (err) {
         handleError(err, 500, next);
     }

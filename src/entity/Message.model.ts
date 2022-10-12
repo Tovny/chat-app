@@ -4,17 +4,21 @@ import {
     Column,
     CreateDateColumn,
     UpdateDateColumn,
-    OneToOne,
+    ManyToOne,
 } from 'typeorm';
-import { RoomMessage } from './RoomMessage.model';
+import { Room } from './Room.model';
+import { User } from './User.model';
 
 @Entity()
 export class Message {
     @PrimaryGeneratedColumn()
     public id: string;
 
-    @OneToOne(() => RoomMessage, (roomMessage) => roomMessage.message)
-    public room: RoomMessage;
+    @ManyToOne(() => User, (user) => user.messages)
+    public user: User;
+
+    @ManyToOne(() => Room, (room) => room.messages)
+    public room: Room;
 
     @Column()
     public content: string;

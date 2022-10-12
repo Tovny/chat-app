@@ -7,6 +7,7 @@ import {
     OneToMany,
 } from 'typeorm';
 import { Connection } from './Connection.model';
+import { RoomMessage } from './RoomMessage.model';
 import { RoomUser } from './RoomUser.model';
 
 @Entity()
@@ -23,8 +24,11 @@ export class User {
     @Column()
     public password: string;
 
-    @OneToMany(() => RoomUser, (roomUser) => roomUser.user)
+    @OneToMany(() => RoomUser, (room) => room.user)
     public rooms: RoomUser[];
+
+    @OneToMany(() => RoomMessage, (message) => message.user)
+    public messages: RoomMessage[];
 
     @OneToMany(() => Connection, (connection) => connection.user)
     public connections: Connection[];

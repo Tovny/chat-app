@@ -6,7 +6,7 @@ import {
     UpdateDateColumn,
     OneToMany,
 } from 'typeorm';
-import { Message } from './Message.model';
+import { RoomMessage } from './RoomMessage.model';
 import { RoomUser } from './RoomUser.model';
 
 @Entity()
@@ -20,11 +20,11 @@ export class Room {
     @Column()
     public password: string;
 
-    @OneToMany(() => RoomUser, (roomUser) => roomUser.room)
+    @OneToMany(() => RoomUser, (user) => user.room)
     public users: RoomUser[];
 
-    @OneToMany(() => Message, (message) => message.room)
-    public messages: Message[];
+    @OneToMany(() => RoomMessage, (message) => message.room)
+    public messages: RoomMessage[];
 
     @CreateDateColumn({
         type: 'timestamp',

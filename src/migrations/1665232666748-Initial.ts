@@ -60,6 +60,11 @@ const userTable = new Table({
             onDelete: 'cascade',
         },
         {
+            referencedTableName: 'roomMessages',
+            columnNames: ['messages'],
+            referencedColumnNames: ['user'],
+        },
+        {
             referencedTableName: 'connections',
             columnNames: ['connections'],
             referencedColumnNames: ['user'],
@@ -73,7 +78,7 @@ const roomTable = new Table({
     columns: [
         ...sharedColumns,
         {
-            name: 'username',
+            name: 'name',
             type: 'varchar',
             length: '255',
             isUnique: true,
@@ -84,6 +89,20 @@ const roomTable = new Table({
             type: 'varchar',
             length: '255',
             isNullable: true,
+        },
+    ],
+    foreignKeys: [
+        {
+            referencedTableName: 'roomUsers',
+            columnNames: ['users'],
+            referencedColumnNames: ['room'],
+            onDelete: 'cascade',
+        },
+        {
+            referencedTableName: 'roomMessages',
+            columnNames: ['messages'],
+            referencedColumnNames: ['room'],
+            onDelete: 'cascade',
         },
     ],
 });
@@ -100,9 +119,9 @@ const messageTable = new Table({
     ],
     foreignKeys: [
         {
-            referencedTableName: 'rooms',
+            referencedTableName: 'roomMessages',
             columnNames: ['room'],
-            referencedColumnNames: ['messages'],
+            referencedColumnNames: ['message'],
         },
     ],
 });
@@ -117,8 +136,6 @@ const connectionTable = new Table({
             isGenerated: true,
             generationStrategy: 'increment',
         },
-        { name: 'userID', type: 'text', isNullable: false },
-        { name: 'connectionID', type: 'text', isNullable: false },
     ],
     foreignKeys: [
         {
@@ -130,7 +147,7 @@ const connectionTable = new Table({
 });
 
 const roomUserTable = new Table({
-    name: 'connections',
+    name: 'roomUsers',
     columns: [
         {
             name: 'id',
@@ -139,8 +156,6 @@ const roomUserTable = new Table({
             isGenerated: true,
             generationStrategy: 'increment',
         },
-        { name: 'userID', type: 'text' },
-        { name: 'roomID', type: 'text' },
         {
             name: 'created_at',
             type: 'timestamptz',
@@ -156,8 +171,45 @@ const roomUserTable = new Table({
         },
         {
             referencedTableName: 'rooms',
-            columnNames: ['rooms'],
+            columnNames: ['room'],
             referencedColumnNames: ['users'],
+        },
+    ],
+});
+
+const roomMessageTable = new Table({
+    name: 'roomMessages',
+    columns: [
+        {
+            name: 'id',
+            type: 'integer',
+            isPrimary: true,
+            isGenerated: true,
+            generationStrategy: 'increment',
+        },
+        {
+            name: 'created_at',
+            type: 'timestamptz',
+            isNullable: false,
+            default: 'now()',
+        },
+    ],
+    foreignKeys: [
+        {
+            referencedTableName: 'messages',
+            columnNames: ['message'],
+            referencedColumnNames: ['room'],
+            onDelete: 'cascade',
+        },
+        {
+            referencedTableName: 'users',
+            columnNames: ['user'],
+            referencedColumnNames: ['messages'],
+        },
+        {
+            referencedTableName: 'rooms',
+            columnNames: ['room'],
+            referencedColumnNames: ['messages'],
         },
     ],
 });
@@ -168,6 +220,7 @@ const tables = [
     messageTable,
     connectionTable,
     roomUserTable,
+    roomMessageTable,
 ];
 
 export class Initial1665232666748 implements MigrationInterface {

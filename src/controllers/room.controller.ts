@@ -54,7 +54,7 @@ export const postCreateRoom = async (
 ) => {
     const { name, password } = req.body;
     try {
-        const hashedPass = await hash(password, 10);
+        const hashedPass = await hash(password, process.env.HASH_ROUNDS);
         const repo = SqlDataSource.getRepository(Room);
         const newRoom = repo.create({ name, password: hashedPass });
         const response = await repo.save(newRoom);

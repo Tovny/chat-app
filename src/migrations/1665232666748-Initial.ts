@@ -148,7 +148,39 @@ const connectionTable = new Table({
     ],
 });
 
-const tables = [userTable, roomTable, messageTable, connectionTable];
+const roomUserTable = new Table({
+    name: 'roomUsers',
+    columns: [
+        {
+            name: 'created_at',
+            type: 'timestamptz',
+            isNullable: false,
+            default: 'now()',
+        },
+    ],
+    foreignKeys: [
+        {
+            referencedTableName: 'users',
+            columnNames: ['user'],
+            referencedColumnNames: ['rooms'],
+            onDelete: 'cascade',
+        },
+        {
+            referencedTableName: 'rooms',
+            columnNames: ['room'],
+            referencedColumnNames: ['users'],
+            onDelete: 'cascade',
+        },
+    ],
+});
+
+const tables = [
+    userTable,
+    roomTable,
+    messageTable,
+    connectionTable,
+    roomUserTable,
+];
 
 export class Initial1665232666748 implements MigrationInterface {
     public async up(queryRunner: QueryRunner): Promise<void> {

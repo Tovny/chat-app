@@ -5,12 +5,10 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
     OneToMany,
-    ManyToMany,
-    JoinColumn,
 } from 'typeorm';
 import { Connection } from './Connection.model';
 import { Message } from './Message.model';
-import { Room } from './Room.model';
+import { RoomUser } from './RoomUser.model';
 
 @Entity()
 export class User {
@@ -26,9 +24,8 @@ export class User {
     @Column()
     public password: string;
 
-    @ManyToMany(() => Room, (room) => room.users)
-    @JoinColumn()
-    public rooms: Room[];
+    @OneToMany(() => RoomUser, (roomUser) => roomUser.user)
+    public rooms: RoomUser[];
 
     @OneToMany(() => Message, (room) => room.user)
     public messages: Message[];

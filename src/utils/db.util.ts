@@ -4,6 +4,7 @@ import { User } from '../entity/User.model';
 import { Message } from '../entity/Message.model';
 import { config } from 'dotenv';
 import { Connection } from '../entity/Connection.model';
+import { RoomUser } from '../entity/RoomUser.model';
 
 config();
 
@@ -14,10 +15,10 @@ export const SqlDataSource = new DataSource({
     username: process.env.DB_USERNAME,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
-    synchronize: false,
+    synchronize: true,
     migrationsRun: false,
     logging: true,
-    entities: [User, Room, Message, Connection],
+    entities: [User, Room, Message, Connection, RoomUser],
     subscribers: [],
     migrations: ['../migrations/**'],
 });

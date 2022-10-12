@@ -7,7 +7,7 @@ import {
     OneToMany,
 } from 'typeorm';
 import { Message } from './Message.model';
-import { User } from './User.model';
+import { RoomUser } from './RoomUser.model';
 
 @Entity()
 export class Room {
@@ -20,8 +20,8 @@ export class Room {
     @Column()
     public password: string;
 
-    @OneToMany(() => User, (user) => user.rooms)
-    public users: User[];
+    @OneToMany(() => RoomUser, (roomUser) => roomUser.room)
+    public users: RoomUser[];
 
     @OneToMany(() => Message, (message) => message.room)
     public messages: Message[];

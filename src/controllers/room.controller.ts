@@ -19,7 +19,7 @@ export const getUserRooms = async (
             .innerJoinAndSelect(User, 'user')
             .innerJoinAndSelect(Room, 'room')
             .where('user.id = :id', { id: req.user.id })
-            .execute();
+            .getMany();
         res.json(rooms);
     } catch (err) {
         handleError(err, 500, next);
@@ -40,7 +40,7 @@ export const getRoom = async (
             .leftJoinAndSelect('room.messages', 'message')
             .where('room.id = :roomID', { roomID: id })
             .andWhere('user.id = :userID', { userID: req.user.id })
-            .execute();
+            .getOne();
 
         res.json(room);
     } catch (err) {

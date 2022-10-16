@@ -10,14 +10,16 @@ import { WebSocketServer } from 'ws';
 import { authRouter } from './routes/auth.routes';
 import { decodeUserJwt } from './utils/decode-user-jwt.util';
 import { Websocket } from './types';
-import { RoomUser } from './entity/RoomUser.model';
-import { broadcastConnection } from './ws-handlers/broadcast-connection.handler';
 import { broadcastDisconnection } from './ws-handlers/broadcast-disconnection.handler';
+import { cors } from './middleware/cors.middleware';
+import { User } from './entity/User.model';
+import { connectSocket } from './ws-handlers/connection.handler';
 
 const app = express();
 export const wss = new WebSocketServer({ noServer: true });
 
 app.use(json());
+app.use(cors);
 
 app.use(getUser);
 
@@ -29,35 +31,44 @@ app.use(errorHandler);
 const server = createServer(app);
 
 server.on('upgrade', async (req, socket, head) => {
-    const token = decodeUserJwt(req.headers.authorization);
-    if (!token) {
-        socket.write('HTTP/1.1 401 Unauthorized');
+    try {
+        const jwt = req.url?.split('jwt=')[1];
+        const token = decodeUserJwt(jwt, '');
+
+        if (!token) {
+            socket.write('HTTP/1.1 401 Unauthorized');
+            return socket.destroy();
+        }
+        const user = await SqlDataSource.getRepository(User).findOneBy({
+            id: `${token.id}`,
+        });
+
+        if (!user) {
+            socket.write('HTTP/1.1 401 Unauthorized');
+            return socket.destroy();
+        }
+
+        wss.handleUpgrade(req, socket, head, async (ws: Websocket) => {
+            const { noPingTimeout, pingInterval } = await connectSocket(
+                ws,
+                user
+            );
+            const handleDisconnect = () => {
+                clearInterval(pingInterval);
+                broadcastDisconnection(ws);
+                wss.clients.delete(ws);
+            };
+
+            ws.on('pong', () => {
+                clearTimeout(noPingTimeout);
+            });
+            ws.on('error', () => handleDisconnect());
+            ws.on('close', () => handleDisconnect());
+        });
+    } catch (err) {
+        socket.write('HTTP/1.1 500 Server error');
         return socket.destroy();
     }
-    const rooms = await SqlDataSource.getRepository(RoomUser).findBy({
-        user: `${token.id}` as unknown,
-    });
-    if (!rooms) {
-        socket.write('HTTP/1.1 401 Unauthorized');
-        return socket.destroy();
-    }
-
-    wss.handleUpgrade(req, socket, head, (ws) => {
-        ws.emit('connection', ws, rooms);
-    });
-});
-
-wss.on('connection', async (ws: Websocket, rooms: RoomUser[]) => {
-    ws.rooms = rooms;
-    broadcastConnection(ws);
-
-    ws.on('error', () => {
-        broadcastDisconnection(ws);
-    });
-
-    ws.on('close', () => {
-        broadcastDisconnection(ws);
-    });
 });
 
 const port = process.env.PORT || 5000;

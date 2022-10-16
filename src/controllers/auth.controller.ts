@@ -38,9 +38,7 @@ export const postRegister = async (
         );
         const user = repo.create({ username, password: hashedPass, email });
         const dbUser = await repo.save(user);
-        dbUser.password = undefined;
-        const token = sign(JSON.stringify(dbUser), process.env.JWT_SECRET);
-        res.json(token);
+        res.json(dbUser);
     } catch (err) {
         handleError(err, 500, next);
     }

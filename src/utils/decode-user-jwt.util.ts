@@ -1,11 +1,17 @@
 import { verify } from 'jsonwebtoken';
 import { User } from '../entity/User.model';
 
-export const decodeUserJwt = (token: string): User | undefined => {
+export const decodeUserJwt = (
+    token: string,
+    prepend = 'bearer token '
+): User | undefined => {
     if (!token) {
         return undefined;
     }
-    const tokenData = token.split('bearer token ')[1];
+    let tokenData = token;
+    if (prepend) {
+        tokenData = token.split('bearer token ')[1];
+    }
     if (!tokenData) {
         return undefined;
     }

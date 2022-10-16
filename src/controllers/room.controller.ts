@@ -45,13 +45,27 @@ export const getRoom = async (
 ) => {
     const { id } = req.params;
     try {
-        const room = await getSharedRoomQuery()
-            .leftJoinAndSelect('room.messages', 'message')
+        const room = await SqlDataSource.getRepository(Room)
+            .createQueryBuilder('room')
             .where('room.id = :roomID', { roomID: id })
-            .andWhere('user.id = :userID', { userID: req.user.id })
+            .addSelect(['room.id', 'room.name'])
+            .leftJoinAndSelect('room.messages', 'message')
+            .leftJoinAndSelect('room.users', 'roomUsers')
+            .leftJoin('roomUsers.user', 'user')
+            .addSelect(['user.username', 'user.id'])
             .getOne();
 
-        res.json(room);
+        const onlineUsers: RoomUser[] = [];
+        wss.clients.forEach((client: Websocket) => {
+            const clientRoom = client.rooms.find(
+                (r) => (r.room.id as any) === Number(id) // TO DO
+            );
+            if (clientRoom) {
+                onlineUsers.push(clientRoom);
+            }
+        });
+
+        res.json({ room, onlineUsers });
     } catch (err) {
         handleError(err, 500, next);
     }
@@ -105,7 +119,7 @@ export const postJoinRoom = async (
             if (client.readyState !== OPEN) {
                 return;
             }
-            if (client.rooms.some((r) => r.id === room.id)) {
+            if (client.rooms.some((r) => r['roomId'] === room['roomId'])) {
                 client.send(
                     JSON.stringify({ type: 'newUser', message: response })
                 );
@@ -133,7 +147,7 @@ export const postRoomMessage = async (
             if (client.readyState !== OPEN) {
                 return;
             }
-            if (client.rooms.some((r) => r.id === room.id)) {
+            if (client.rooms.some((r) => r['roomId'] === room['roomId'])) {
                 client.send(
                     JSON.stringify({ type: 'message', message: response })
                 );

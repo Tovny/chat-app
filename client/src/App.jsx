@@ -6,6 +6,7 @@ import { createContext } from 'react';
 import { CreateRoom } from './components/CreateRoom';
 import { Rooms } from './components/Rooms';
 import { JoinRoom } from './components/JoinRoom';
+import { Room } from './components/Room';
 
 export const AppContext = createContext({});
 
@@ -16,6 +17,7 @@ function App() {
     const [room, setRoom] = useState(null);
     const [roomUsers, setRoomUsers] = useState([]);
     const [messages, setMessages] = useState([]);
+    const [newConnection, setNewConnection] = useState(null);
 
     useEffect(() => {
         if (!user) {
@@ -25,7 +27,9 @@ function App() {
 
         const ws = webSocket('ws://localhost:5000/jwt=' + user);
         ws.subscribe((data) => {
-            console.log(data);
+            if (data.type === 'connection') {
+                setNewConnection(data.user);
+            }
         });
 
         setSocket(ws);
@@ -40,6 +44,7 @@ function App() {
                 room,
                 roomUsers,
                 messages,
+                newConnection,
                 setUser,
                 setRoom,
                 setRooms,
@@ -56,6 +61,7 @@ function App() {
                             <Rooms />
                             <JoinRoom />
                         </div>
+                        {room && <Room />}
                     </div>
                 )}
             </div>

@@ -16,10 +16,12 @@ export const broadcastConnection = (ws: Websocket) => {
         const shareRooms = arraysIntersect(rooms, client.rooms, 'roomId');
 
         if (shareRooms) {
-            client.send({
-                type: 'connection',
-                user,
-            });
+            client.send(
+                JSON.stringify({
+                    type: 'connection',
+                    user,
+                })
+            );
         }
     });
 };

@@ -5,12 +5,11 @@ import { roomRouter } from './routes/room.routes';
 import { json } from 'body-parser';
 import { getUser } from './middleware/get-user.middleware';
 import { errorHandler } from './middleware/handle-error.middleware';
-import { createServer } from 'http';
+import { createServer, IncomingMessage } from 'http';
 import { WebSocketServer } from 'ws';
 import { authRouter } from './routes/auth.routes';
 import { decodeUserJwt } from './utils/decode-user-jwt.util';
 import { Websocket } from './types';
-import { broadcastDisconnect } from './ws-handlers/broadcast-disconnection.handler';
 import { cors } from './middleware/cors.middleware';
 import { User } from './entity/User.model';
 import { connectSocket } from './ws-handlers/connection.handler';
@@ -30,6 +29,8 @@ app.use(errorHandler);
 
 const server = createServer(app);
 
+app;
+
 server.on('upgrade', async (req, socket, head) => {
     try {
         const jwt = req.url?.split('jwt=')[1];
@@ -48,28 +49,17 @@ server.on('upgrade', async (req, socket, head) => {
             return socket.destroy();
         }
 
-        wss.handleUpgrade(req, socket, head, async (ws: Websocket) => {
-            const { noPingTimeout, pingInterval } = await connectSocket(
-                ws,
-                req,
-                user
-            );
-            const handleDisconnect = () => {
-                clearInterval(pingInterval);
-                broadcastDisconnect(ws);
-                wss.clients.delete(ws);
-            };
-
-            ws.on('pong', () => {
-                clearTimeout(noPingTimeout);
-            });
-            ws.on('error', () => handleDisconnect());
-            ws.on('close', () => handleDisconnect());
+        wss.handleUpgrade(req, socket, head, async (ws) => {
+            wss.emit('connection', ws, req, user);
         });
     } catch (err) {
         socket.write('HTTP/1.1 500 Server error');
         return socket.destroy();
     }
+});
+
+wss.on('connection', async (ws: Websocket, _: IncomingMessage, user: User) => {
+    await connectSocket(ws, user);
 });
 
 const port = process.env.PORT || 5000;

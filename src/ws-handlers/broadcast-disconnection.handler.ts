@@ -30,10 +30,12 @@ export const broadcastDisconnect = (ws: Websocket) => {
         }
         const shareRooms = arraysIntersect(rooms, client.rooms, 'roomId');
         if (shareRooms) {
-            return client.send({
-                type: 'disconnect',
-                user: userId,
-            });
+            return client.send(
+                JSON.stringify({
+                    type: 'disconnect',
+                    user: userId,
+                })
+            );
         }
     });
 };

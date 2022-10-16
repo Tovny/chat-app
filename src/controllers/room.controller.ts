@@ -106,7 +106,9 @@ export const postJoinRoom = async (
                 return;
             }
             if (client.rooms.some((r) => r.id === room.id)) {
-                client.send({ type: 'newUser', message: response });
+                client.send(
+                    JSON.stringify({ type: 'newUser', message: response })
+                );
             }
         });
         res.sendStatus(200);
@@ -132,7 +134,9 @@ export const postRoomMessage = async (
                 return;
             }
             if (client.rooms.some((r) => r.id === room.id)) {
-                client.send({ type: 'message', message: response });
+                client.send(
+                    JSON.stringify({ type: 'message', message: response })
+                );
             }
         });
         res.sendStatus(200);

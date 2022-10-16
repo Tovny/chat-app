@@ -51,6 +51,7 @@ server.on('upgrade', async (req, socket, head) => {
         wss.handleUpgrade(req, socket, head, async (ws: Websocket) => {
             const { noPingTimeout, pingInterval } = await connectSocket(
                 ws,
+                req,
                 user
             );
             const handleDisconnect = () => {

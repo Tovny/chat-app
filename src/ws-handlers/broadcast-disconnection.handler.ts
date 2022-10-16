@@ -8,19 +8,18 @@ export const broadcastDisconnect = (ws: Websocket) => {
     if (!rooms.length) {
         return;
     }
-    const user = ws.rooms[0].user;
+    const userId = rooms[0]['userId'];
     let multipleConnections = false;
     wss.clients.forEach((client: Websocket) => {
         if (
             multipleConnections ||
             client === ws ||
-            client.readyState !== OPEN
+            client.readyState !== OPEN ||
+            !client.rooms.length
         ) {
             return;
         }
-        if (client.rooms[0]?.user.id === user.id) {
-            multipleConnections = true;
-        }
+        multipleConnections = client.rooms[0]['userId'] === userId;
     });
     if (multipleConnections) {
         return;
@@ -29,11 +28,11 @@ export const broadcastDisconnect = (ws: Websocket) => {
         if (client === ws || client.readyState !== OPEN) {
             return;
         }
-        const shareRooms = arraysIntersect(rooms, client.rooms, ['room', 'id']);
+        const shareRooms = arraysIntersect(rooms, client.rooms, 'roomId');
         if (shareRooms) {
             return client.send({
                 type: 'disconnect',
-                user,
+                user: userId,
             });
         }
     });

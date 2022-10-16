@@ -74,8 +74,8 @@ roomRouter.post(
                 const roomUser = await getRoomUser(req.user.id, room.id);
                 if (roomUser) {
                     return Promise.reject({
-                        statusCode: 402,
-                        msg: 'Already a member of the room.',
+                        statusCode: 403,
+                        msg: 'Already a member.',
                     });
                 }
             } catch (err) {

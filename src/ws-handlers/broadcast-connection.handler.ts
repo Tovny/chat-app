@@ -13,11 +13,7 @@ export const broadcastConnection = (ws: Websocket) => {
         if (client === ws || client.readyState !== OPEN) {
             return;
         }
-        const shareRooms = arraysIntersect(
-            rooms.map((r) => r.room),
-            client.rooms.map((r) => r.room),
-            'id'
-        );
+        const shareRooms = arraysIntersect(rooms, client.rooms, 'roomId');
 
         if (shareRooms) {
             client.send({

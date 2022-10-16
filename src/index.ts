@@ -10,7 +10,7 @@ import { WebSocketServer } from 'ws';
 import { authRouter } from './routes/auth.routes';
 import { decodeUserJwt } from './utils/decode-user-jwt.util';
 import { Websocket } from './types';
-import { broadcastDisconnection } from './ws-handlers/broadcast-disconnection.handler';
+import { broadcastDisconnect } from './ws-handlers/broadcast-disconnection.handler';
 import { cors } from './middleware/cors.middleware';
 import { User } from './entity/User.model';
 import { connectSocket } from './ws-handlers/connection.handler';
@@ -55,7 +55,7 @@ server.on('upgrade', async (req, socket, head) => {
             );
             const handleDisconnect = () => {
                 clearInterval(pingInterval);
-                broadcastDisconnection(ws);
+                broadcastDisconnect(ws);
                 wss.clients.delete(ws);
             };
 

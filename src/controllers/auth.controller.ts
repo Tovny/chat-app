@@ -38,6 +38,7 @@ export const postRegister = async (
         );
         const user = repo.create({ username, password: hashedPass, email });
         const dbUser = await repo.save(user);
+        delete dbUser.password;
         res.json(dbUser);
     } catch (err) {
         handleError(err, 500, next);

@@ -13,18 +13,23 @@ export function Auth() {
     const handleLogin = async () => {
         fetch('http://localhost:5000/login/', {
             method: 'POST',
-            body: { username, password },
-        }).then((token) => {
-            console.log(token);
-            // setUser(token);
-            // console.log(token);
-        });
+            body: JSON.stringify({ username, password }),
+            headers: { 'Content-Type': 'application/json' },
+        })
+            .catch((err) => console.error(err))
+            .then((res) => {
+                return res.json();
+            })
+            .then((token) => {
+                setUser(token);
+            });
     };
 
     const handleRegister = async () => {
         fetch('http://localhost:5000/register', {
             method: 'POST',
-            body: { username, password, email },
+            body: JSON.stringify({ username, password, email }),
+            headers: { 'Content-Type': 'application/json' },
         }).then(() => {
             setShowRegister(false);
         });

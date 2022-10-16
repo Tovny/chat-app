@@ -3,8 +3,11 @@ import { wss } from '..';
 import { Websocket } from '../types';
 import { arraysIntersect } from '../utils/arrays-intersect.util';
 
-export const broadcastDisconnection = (ws: Websocket) => {
+export const broadcastDisconnect = (ws: Websocket) => {
     const rooms = ws.rooms;
+    if (!rooms.length) {
+        return;
+    }
     const user = ws.rooms[0].user;
     let multipleConnections = false;
     wss.clients.forEach((client: Websocket) => {
@@ -15,7 +18,7 @@ export const broadcastDisconnection = (ws: Websocket) => {
         ) {
             return;
         }
-        if (client.rooms[0].user.id === user.id) {
+        if (client.rooms[0]?.user.id === user.id) {
             multipleConnections = true;
         }
     });
@@ -26,14 +29,11 @@ export const broadcastDisconnection = (ws: Websocket) => {
         if (client === ws || client.readyState !== OPEN) {
             return;
         }
-        const sharesRooms = arraysIntersect(rooms, client.rooms, [
-            'room',
-            'id',
-        ]);
-        if (sharesRooms) {
+        const shareRooms = arraysIntersect(rooms, client.rooms, ['room', 'id']);
+        if (shareRooms) {
             return client.send({
-                type: 'disconnection',
-                user: client.rooms[0].user,
+                type: 'disconnect',
+                user,
             });
         }
     });

@@ -9,11 +9,10 @@ import {
     postRoomMessage,
 } from '../controllers/room.controller';
 import { Room } from '../entity/Room.model';
-import { RoomUser } from '../entity/RoomUser.model';
-import { User } from '../entity/User.model';
 import { requireAuth } from '../middleware/require-auth.middleware';
 import { validateInput } from '../middleware/validate-input.middleware';
 import { SqlDataSource } from '../utils/db.util';
+import { getRoomUser } from '../utils/get-room-user.util';
 
 export const roomRouter = Router();
 
@@ -22,7 +21,7 @@ roomRouter.get('/', requireAuth, getUserRooms);
 roomRouter.get('/:id', requireAuth, getRoom);
 
 roomRouter.post(
-    '/create-room',
+    '/create',
     requireAuth,
     validateInput([
         body('name')
@@ -50,14 +49,14 @@ roomRouter.post(
 );
 
 roomRouter.post(
-    '/join/:id',
+    '/join',
     requireAuth,
     validateInput([
         body('password').custom(async (password, { req }) => {
             try {
-                const { id } = req.params;
+                const { name } = req.body;
                 const room = await SqlDataSource.getRepository(Room).findOneBy({
-                    id,
+                    name: `${name}`,
                 });
                 if (!room) {
                     return Promise.reject({
@@ -70,6 +69,13 @@ roomRouter.post(
                     return Promise.reject({
                         statusCode: 403,
                         msg: 'Passwords do not match.',
+                    });
+                }
+                const roomUser = await getRoomUser(req.user.id, room.id);
+                if (roomUser) {
+                    return Promise.reject({
+                        statusCode: 402,
+                        msg: 'Already a member of the room.',
                     });
                 }
             } catch (err) {
@@ -89,13 +95,7 @@ roomRouter.post(
             .custom(async (_, { req }) => {
                 try {
                     const { id } = req.params;
-                    const roomUser = await SqlDataSource.getRepository(RoomUser)
-                        .createQueryBuilder()
-                        .innerJoin(User, 'user')
-                        .innerJoin(Room, 'room')
-                        .where('room.id = :roomID', { roomID: id })
-                        .andWhere('user.id = :userID', { userID: req.user.id })
-                        .getOne();
+                    const roomUser = await getRoomUser(req.user.id, id);
 
                     if (!roomUser) {
                         return Promise.reject({

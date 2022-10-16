@@ -8,5 +8,5 @@ export function errorHandler(
     ___: NextFunction
 ) {
     console.error(err);
-    res.status(err.statusCode).send(err.message);
+    res.status(err.statusCode).json(err);
 }

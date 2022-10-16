@@ -6,7 +6,6 @@ import {
     UpdateDateColumn,
     OneToMany,
 } from 'typeorm';
-import { Connection } from './Connection.model';
 import { Message } from './Message.model';
 import { RoomUser } from './RoomUser.model';
 
@@ -29,9 +28,6 @@ export class User {
 
     @OneToMany(() => Message, (room) => room.user)
     public messages: Message[];
-
-    @OneToMany(() => Connection, (connection) => connection.user)
-    public connections: Connection[];
 
     @CreateDateColumn({
         type: 'timestamp',

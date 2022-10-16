@@ -63,11 +63,6 @@ const userTable = new Table({
             columnNames: ['messages'],
             referencedColumnNames: ['user'],
         },
-        {
-            referencedTableName: 'connections',
-            columnNames: ['connections'],
-            referencedColumnNames: ['user'],
-        },
     ],
 });
 
@@ -127,27 +122,6 @@ const messageTable = new Table({
     ],
 });
 
-const connectionTable = new Table({
-    name: 'connections',
-    columns: [
-        {
-            name: 'id',
-            type: 'integer',
-            isPrimary: true,
-            isGenerated: true,
-            generationStrategy: 'increment',
-        },
-    ],
-    foreignKeys: [
-        {
-            referencedTableName: 'users',
-            columnNames: ['user'],
-            referencedColumnNames: ['connections'],
-            onDelete: 'cascade',
-        },
-    ],
-});
-
 const roomUserTable = new Table({
     name: 'roomUsers',
     columns: [
@@ -174,13 +148,7 @@ const roomUserTable = new Table({
     ],
 });
 
-const tables = [
-    userTable,
-    roomTable,
-    messageTable,
-    connectionTable,
-    roomUserTable,
-];
+const tables = [userTable, roomTable, messageTable, roomUserTable];
 
 export class Initial1665232666748 implements MigrationInterface {
     public async up(queryRunner: QueryRunner): Promise<void> {

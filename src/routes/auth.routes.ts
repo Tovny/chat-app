@@ -26,7 +26,7 @@ authRouter.post(
                 const passMatches = await compare(password, user.password);
                 if (!passMatches) {
                     return Promise.reject({
-                        statusCode: 403,
+                        statusCode: 401,
                         msg: 'Password does not match.',
                     });
                 }

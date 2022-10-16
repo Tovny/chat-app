@@ -9,8 +9,10 @@ import { createServer } from 'http';
 import { WebSocketServer } from 'ws';
 import { authRouter } from './routes/auth.routes';
 import { decodeUserJwt } from './utils/decode-user-jwt.util';
-import { User } from './entity/User.model';
-import { Connection } from './entity/Connection.model';
+import { Websocket } from './types';
+import { RoomUser } from './entity/RoomUser.model';
+import { broadcastConnection } from './ws-handlers/broadcast-connection.handler';
+import { broadcastDisconnection } from './ws-handlers/broadcast-disconnection.handler';
 
 const app = express();
 export const wss = new WebSocketServer({ noServer: true });
@@ -32,30 +34,29 @@ server.on('upgrade', async (req, socket, head) => {
         socket.write('HTTP/1.1 401 Unauthorized');
         return socket.destroy();
     }
-    const user = await SqlDataSource.getRepository(User).findOneBy({
-        id: `${token.id}`,
+    const rooms = await SqlDataSource.getRepository(RoomUser).findBy({
+        user: `${token.id}` as unknown,
     });
-    if (!user) {
+    if (!rooms) {
         socket.write('HTTP/1.1 401 Unauthorized');
         return socket.destroy();
     }
 
     wss.handleUpgrade(req, socket, head, (ws) => {
-        ws.emit('connection', ws, user);
+        ws.emit('connection', ws, rooms);
     });
 });
 
-wss.on('connection', async (ws, user: User) => {
-    const connectionRepo = SqlDataSource.getRepository(Connection);
-    const newConnection = connectionRepo.create({ user });
-    const savedConnection = await connectionRepo.save(newConnection);
+wss.on('connection', async (ws: Websocket, rooms: RoomUser[]) => {
+    ws.rooms = rooms;
+    broadcastConnection(ws);
 
     ws.on('error', () => {
-        connectionRepo.delete(savedConnection);
+        broadcastDisconnection(ws);
     });
 
     ws.on('close', () => {
-        connectionRepo.delete(savedConnection);
+        broadcastDisconnection(ws);
     });
 });
 

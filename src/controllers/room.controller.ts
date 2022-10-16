@@ -1,10 +1,12 @@
 import { hash } from 'bcrypt';
 import { NextFunction, Response } from 'express';
+import { OPEN } from 'ws';
+import { wss } from '..';
 import { Message } from '../entity/Message.model';
 import { Room } from '../entity/Room.model';
 import { RoomUser } from '../entity/RoomUser.model';
 import { User } from '../entity/User.model';
-import { Request } from '../types';
+import { Request, Websocket } from '../types';
 import { SqlDataSource } from '../utils/db.util';
 import { handleError } from '../utils/handle-error.util';
 
@@ -100,7 +102,15 @@ export const postRoomMessage = async (
         const room = await SqlDataSource.getRepository(Room).findOneBy({ id });
         const newMessage = repo.create({ content, user: req.user, room: room });
         const response = await repo.save(newMessage);
-        res.json(response);
+        wss.clients.forEach((client: Websocket) => {
+            if (client.readyState !== OPEN) {
+                return;
+            }
+            if (client.rooms.some((r) => r.id === room.id)) {
+                client.send({ type: 'message', message: response });
+            }
+        });
+        res.sendStatus(200);
     } catch (err) {
         handleError(err, 500, next);
     }

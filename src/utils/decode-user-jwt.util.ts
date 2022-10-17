@@ -2,7 +2,7 @@ import { verify } from 'jsonwebtoken';
 import { User } from '../entity/User.model';
 
 export const decodeUserJwt = (
-    token: string,
+    token: string | undefined,
     prepend = 'bearer token '
 ): User | undefined => {
     if (!token) {

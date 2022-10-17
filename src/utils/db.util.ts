@@ -16,7 +16,7 @@ export const SqlDataSource = new DataSource({
     database: process.env.DB_NAME,
     synchronize: false,
     migrationsRun: false,
-    logging: true,
+    logging: false,
     entities: [User, Room, Message, RoomUser],
     subscribers: [],
     migrations: ['../migrations/**'],

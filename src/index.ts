@@ -8,13 +8,14 @@ import { errorHandler } from './middleware/handle-error.middleware';
 import { createServer, IncomingMessage } from 'http';
 import { WebSocketServer } from 'ws';
 import { authRouter } from './routes/auth.routes';
-import { decodeUserJwt } from './utils/decode-user-jwt.util';
 import { Websocket } from './types';
 import { cors } from './middleware/cors.middleware';
 import { User } from './entity/User.model';
+import { handshake } from './ws-handlers/handshake.handler';
 import { connectSocket } from './ws-handlers/connection.handler';
 
 const app = express();
+const server = createServer(app);
 export const wss = new WebSocketServer({ noServer: true });
 
 app.use(json());
@@ -27,35 +28,8 @@ app.use('/rooms', roomRouter);
 
 app.use(errorHandler);
 
-const server = createServer(app);
-
-app;
-
 server.on('upgrade', async (req, socket, head) => {
-    try {
-        const jwt = req.url?.split('jwt=')[1];
-        const token = decodeUserJwt(jwt, '');
-
-        if (!token) {
-            socket.write('HTTP/1.1 401 Unauthorized');
-            return socket.destroy();
-        }
-        const user = await SqlDataSource.getRepository(User).findOneBy({
-            id: `${token.id}`,
-        });
-
-        if (!user) {
-            socket.write('HTTP/1.1 401 Unauthorized');
-            return socket.destroy();
-        }
-
-        wss.handleUpgrade(req, socket, head, async (ws) => {
-            wss.emit('connection', ws, req, user);
-        });
-    } catch (err) {
-        socket.write('HTTP/1.1 500 Server error');
-        return socket.destroy();
-    }
+    handshake(req, socket, head);
 });
 
 wss.on('connection', async (ws: Websocket, _: IncomingMessage, user: User) => {

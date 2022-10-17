@@ -1,26 +1,9 @@
-import { OPEN } from 'ws';
-import { wss } from '..';
 import { Websocket } from '../types';
-import { arraysIntersect } from '../utils/arrays-intersect.util';
+import { broadcastUserConnection } from '../utils/broadcast-user-connection.util';
 
 export const broadcastConnection = (ws: Websocket) => {
-    const rooms = ws.rooms;
-    if (!rooms.length) {
+    if (!ws.rooms.length) {
         return;
     }
-    const user = rooms[0].user;
-    wss.clients.forEach((client: Websocket) => {
-        if (client === ws || client.readyState !== OPEN) {
-            return;
-        }
-        const shareRooms = arraysIntersect(rooms, client.rooms, 'roomId'); // change to return intersecting object
-        if (shareRooms) {
-            client.send(
-                JSON.stringify({
-                    type: 'connection',
-                    user,
-                })
-            );
-        }
-    });
+    broadcastUserConnection(ws);
 };

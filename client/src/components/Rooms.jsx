@@ -3,7 +3,7 @@ import { useContext } from 'react';
 import { AppContext } from '../App';
 
 export function Rooms() {
-    const { user, rooms, setRoom, setRooms } = useContext(AppContext);
+    const { user, rooms, setRoom, dispatch } = useContext(AppContext);
 
     useEffect(() => {
         fetch('http://localhost:5000/rooms', {
@@ -11,7 +11,7 @@ export function Rooms() {
         })
             .then((res) => res.json())
             .then((rooms) => {
-                setRooms(rooms);
+                dispatch({ type: 'rooms', payload: rooms });
             });
     }, []);
 

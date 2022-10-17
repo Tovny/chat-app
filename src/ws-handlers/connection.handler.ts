@@ -7,12 +7,13 @@ import { broadcastDisconnect } from './broadcast-disconnection.handler';
 import { broadcastConnection } from './broadcast-connection.handler';
 
 export const connectSocket = async (ws: Websocket, user: User) => {
+    ws.user = user;
     const rooms = await SqlDataSource.getRepository(RoomUser)
         .createQueryBuilder('roomUser')
+        .where('roomUser.user= :user', { user: user.id })
         .leftJoin('roomUser.user', 'user')
         .leftJoin('roomUser.room', 'room')
         .addSelect(['user.id', 'user.username', 'room.id', 'room.name'])
-        .where('user.id = :id', { id: user.id })
         .getMany();
     ws.rooms = rooms;
     broadcastConnection(ws);

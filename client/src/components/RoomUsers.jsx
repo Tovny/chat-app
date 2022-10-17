@@ -3,33 +3,28 @@ import { useEffect } from 'react';
 import { AppContext } from '../App';
 
 export function RoomUsers({ data }) {
-    const [onlineUsers, setOnlineUsers] = useState([]);
     const [offlineUsers, setOfflineUsers] = useState([]);
-    const { newConnection } = useContext(AppContext);
+    const { onlineUsers } = useContext(AppContext);
+    const [onlineMembers, setOnlineMembers] = useState([]);
 
     useEffect(() => {
-        const offlineUsers = data.room.users.filter(
-            (u) => !data.onlineUsers.map((user) => user.id).includes(u.id)
+        let online = onlineUsers.filter((u) =>
+            data.users.map((user) => user.user.id).includes(u.id)
         );
-        setOfflineUsers(offlineUsers);
-        setOnlineUsers(data.onlineUsers);
-    }, [data]);
+        let offlineUsers = data.users.filter(
+            (u) => !onlineUsers.map((user) => user.id).includes(u.user.id)
+        );
+        setOnlineMembers(online);
 
-    useEffect(() => {
-        if (newConnection) {
-            if (offlineUsers.map((u) => u.user.id).includes(newConnection.id)) {
-                const newOffline = offlineUsers.filter(
-                    (u) => u.user.id !== newConnection.id
-                );
-            }
-        }
-    }, [newConnection]);
+        setOfflineUsers(offlineUsers);
+    }, [data, onlineUsers]);
 
     return (
         <div>
             <h3>Online</h3>
-            {onlineUsers.map((u) => (
-                <p style={{ color: 'green' }}>{u.user?.username}</p>
+
+            {onlineMembers.map((u) => (
+                <p style={{ color: 'green' }}>{u.username}</p>
             ))}
             <h3>Offline</h3>
             {offlineUsers.map((u) => (

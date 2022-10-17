@@ -6,21 +6,20 @@ import { Message } from '../entity/Message.model';
 import { Room } from '../entity/Room.model';
 import { RoomUser } from '../entity/RoomUser.model';
 import { Request, Websocket } from '../types';
+import { broadcastUserConnection } from '../utils/broadcast-user-connection.util';
 import { SqlDataSource } from '../utils/db.util';
 import { handleError } from '../utils/handle-error.util';
 
-const getSharedRoomQuery = () => {
-    return SqlDataSource.getRepository(RoomUser)
-        .createQueryBuilder('roomUser')
-        .leftJoin('roomUser.user', 'user')
-        .leftJoin('roomUser.room', 'room')
-        .addSelect([
-            'user.id',
-            'user.username',
-            'user.email',
-            'room.id',
-            'room.name',
-        ]);
+const roomQuery = async (id: string) => {
+    return await SqlDataSource.getRepository(Room)
+        .createQueryBuilder('room')
+        .select(['room.id', 'room.name'])
+        .where('room.id = :roomID', { roomID: id })
+        .leftJoinAndSelect('room.messages', 'message')
+        .leftJoinAndSelect('room.users', 'roomUsers')
+        .leftJoin('roomUsers.user', 'user')
+        .addSelect(['user.username', 'user.id'])
+        .getOne();
 };
 
 export const getUserRooms = async (
@@ -29,7 +28,17 @@ export const getUserRooms = async (
     next: NextFunction
 ) => {
     try {
-        const rooms = await getSharedRoomQuery()
+        const rooms = await SqlDataSource.getRepository(RoomUser)
+            .createQueryBuilder('roomUser')
+            .leftJoin('roomUser.user', 'user')
+            .leftJoin('roomUser.room', 'room')
+            .addSelect([
+                'user.id',
+                'user.username',
+                'user.email',
+                'room.id',
+                'room.name',
+            ])
             .where('user.id = :id', { id: req.user.id })
             .getMany();
         res.json(rooms);
@@ -45,27 +54,8 @@ export const getRoom = async (
 ) => {
     const { id } = req.params;
     try {
-        const room = await SqlDataSource.getRepository(Room)
-            .createQueryBuilder('room')
-            .where('room.id = :roomID', { roomID: id })
-            .addSelect(['room.id', 'room.name'])
-            .leftJoinAndSelect('room.messages', 'message')
-            .leftJoinAndSelect('room.users', 'roomUsers')
-            .leftJoin('roomUsers.user', 'user')
-            .addSelect(['user.username', 'user.id'])
-            .getOne();
-
-        const onlineUsers: RoomUser[] = [];
-        wss.clients.forEach((client: Websocket) => {
-            const clientRoom = client.rooms.find(
-                (r) => (r.room.id as any) === Number(id) // TO DO
-            );
-            if (clientRoom) {
-                onlineUsers.push(clientRoom);
-            }
-        });
-
-        res.json({ room, onlineUsers });
+        const room = await roomQuery(id);
+        res.json(room);
     } catch (err) {
         handleError(err, 500, next);
     }
@@ -107,25 +97,29 @@ export const postJoinRoom = async (
     const { name } = req.body;
 
     try {
-        const room = await SqlDataSource.getRepository(Room).findOneBy({
-            name: `${name}`,
-        });
+        const room = await SqlDataSource.getRepository(Room)
+            .createQueryBuilder('room')
+            .select(['room.id', 'room.name'])
+            .where('room.name = :name', { name }) // room joiner ne dobi online userjev
+            .getOne();
         const repo = SqlDataSource.getRepository(RoomUser);
         const newRoomUser = repo.create({ user: req.user, room: room });
-        const response = await repo.save(newRoomUser);
-        delete response.room.password;
-        delete response.user.password;
+        const roomUser = await repo.save(newRoomUser);
+        let userSockets: Websocket[] = [];
+        const updatedRoom = await roomQuery(room.id);
         wss.clients.forEach((client: Websocket) => {
-            if (client.readyState !== OPEN) {
-                return;
+            if (client.user.id === req.user.id) {
+                client.rooms.push(roomUser);
+                userSockets.push(client);
             }
-            if (client.rooms.some((r) => r['roomId'] === room['roomId'])) {
-                client.send(
-                    JSON.stringify({ type: 'newUser', message: response })
-                );
-            }
+            client.send(
+                JSON.stringify({ type: 'roomUpdate', payload: updatedRoom })
+            );
         });
-        res.sendStatus(200);
+        userSockets.forEach((socket) => {
+            broadcastUserConnection(socket, room);
+        });
+        res.json(roomUser);
     } catch (err) {
         handleError(err, 500, next);
     }
@@ -147,9 +141,9 @@ export const postRoomMessage = async (
             if (client.readyState !== OPEN) {
                 return;
             }
-            if (client.rooms.some((r) => r['roomId'] === room['roomId'])) {
+            if (client.rooms.some((r) => r.room.id === room.id)) {
                 client.send(
-                    JSON.stringify({ type: 'message', message: response })
+                    JSON.stringify({ type: 'message', payload: response })
                 );
             }
         });

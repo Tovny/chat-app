@@ -14,4 +14,5 @@ export interface ResponseError extends Partial<Error> {
 
 export interface Websocket extends WsWebsocket {
     rooms: RoomUser[];
+    user: User;
 }

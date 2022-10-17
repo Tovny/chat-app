@@ -7,17 +7,57 @@ import { CreateRoom } from './components/CreateRoom';
 import { Rooms } from './components/Rooms';
 import { JoinRoom } from './components/JoinRoom';
 import { Room } from './components/Room';
+import { useReducer } from 'react';
 
 export const AppContext = createContext({});
+
+const initialState = { onlineUsers: [], messages: [], rooms: [] };
+
+const reducer = (state, action) => {
+    if (action.type === 'users') {
+        return { ...state, onlineUsers: action.payload };
+    }
+    if (action.type === 'user') {
+        return {
+            ...state,
+            onlineUsers: [...state.onlineUsers, action.payload],
+        };
+    }
+    if (action.type === 'disconnect') {
+        return {
+            ...state,
+            onlineUsers: state.onlineUsers.filter(
+                (u) => u.id !== action.payload.id
+            ),
+        };
+    }
+    if (action.type === 'messages') {
+        return { ...state, messages: action.payload };
+    }
+    if (action.type === 'message') {
+        return { ...state, messages: [...state.messages, action.payload] };
+    }
+
+    if (action.type === 'rooms') {
+        return { ...state, rooms: action.payload };
+    }
+    if (action.type === 'room') {
+        return { ...state, rooms: [...state.rooms, action.payload] };
+    }
+    if (action.type === 'roomUpdate') {
+        const newRooms = [...state.rooms];
+        const index = state.rooms.findIndex((r) => r.id === action.payload.id);
+        newRooms[index] = action.payload;
+        return { ...state, rooms: newRooms };
+    }
+};
 
 function App() {
     const [socket, setSocket] = useState(null);
     const [user, setUser] = useState(null);
-    const [rooms, setRooms] = useState([]);
     const [room, setRoom] = useState(null);
     const [roomUsers, setRoomUsers] = useState([]);
-    const [messages, setMessages] = useState([]);
-    const [newConnection, setNewConnection] = useState(null);
+    const [state, dispatch] = useReducer(reducer, initialState);
 
     useEffect(() => {
         if (!user) {
@@ -27,8 +67,21 @@ function App() {
 
         const ws = webSocket('ws://localhost:5000/jwt=' + user);
         ws.subscribe((data) => {
+            console.log(data);
             if (data.type === 'connection') {
-                setNewConnection(data.user);
+                return dispatch({ type: 'user', payload: data.payload });
+            }
+            if (data.type === 'onlineUsers') {
+                return dispatch({ type: 'users', payload: data.payload });
+            }
+            if (data.type === 'disconnect') {
+                return dispatch({ type: 'disconnect', payload: data.payload });
+            }
+            if (data.type === 'message') {
+                return dispatch({ type: 'message', payload: data.payload });
+            }
+            if (data.type === 'roomUpdate') {
+                setRoom(data.payload);
             }
         });
 
@@ -40,16 +93,15 @@ function App() {
             value={{
                 socket,
                 user,
-                rooms,
+                rooms: state.rooms,
                 room,
                 roomUsers,
-                messages,
-                newConnection,
+                messages: state.messages,
+                onlineUsers: state.onlineUsers,
                 setUser,
                 setRoom,
-                setRooms,
                 setRoomUsers,
-                setMessages,
+                dispatch,
             }}
         >
             <div className="App">

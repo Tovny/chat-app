@@ -5,7 +5,7 @@ export function CreateRoom() {
     const [name, setName] = useState('');
     const [password, setPassword] = useState('');
 
-    const { user, rooms, setRooms } = useContext(AppContext);
+    const { user, rooms, dispatch } = useContext(AppContext);
 
     const handleCreation = (evt) => {
         evt.preventDefault();
@@ -21,7 +21,7 @@ export function CreateRoom() {
                 return res.json();
             })
             .then((room) => {
-                setRooms([...rooms, room]);
+                dispatch({ type: 'room', payload: room });
             });
     };
 

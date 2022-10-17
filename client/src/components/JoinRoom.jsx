@@ -5,9 +5,9 @@ export function JoinRoom() {
     const [name, setName] = useState('');
     const [password, setPassword] = useState('');
 
-    const { user } = useContext(AppContext);
+    const { user, dispatch, rooms } = useContext(AppContext);
 
-    const handleCreation = (evt) => {
+    const handleJoin = (evt) => {
         evt.preventDefault();
         fetch('http://localhost:5000/rooms/join', {
             method: 'POST',
@@ -16,14 +16,19 @@ export function JoinRoom() {
                 Authorization: `bearer token ${user}`,
             },
             body: JSON.stringify({ name, password }),
-        }).then(() => {
-            setName('');
-            setPassword('');
-        });
+        })
+            .then((data) => {
+                setName('');
+                setPassword('');
+                return data.json();
+            })
+            .then((room) => {
+                dispatch({ type: 'room', payload: room });
+            });
     };
 
     return (
-        <form className="flex column" onSubmit={handleCreation}>
+        <form className="flex column" onSubmit={handleJoin}>
             <h2>Join room</h2>
             <label>
                 Name

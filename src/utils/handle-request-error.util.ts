@@ -1,7 +1,7 @@
 import { NextFunction } from 'express';
 import { ResponseError } from '../types';
 
-export function handleError(
+export function handleRequestError(
     error: ResponseError,
     statusCode: number,
     next: NextFunction

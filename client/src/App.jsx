@@ -83,6 +83,9 @@ function App() {
             if (data.type === 'roomUpdate') {
                 setRoom(data.payload);
             }
+            if (data.type === 'joinedRoom') {
+                return dispatch({type:"room", payload: data.payload})
+            } 
         });
 
         setSocket(ws);

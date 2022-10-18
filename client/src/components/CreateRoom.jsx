@@ -17,12 +17,7 @@ export function CreateRoom() {
             },
             body: JSON.stringify({ name, password }),
         })
-            .then((res) => {
-                return res.json();
-            })
-            .then((room) => {
-                dispatch({ type: 'room', payload: room });
-            });
+            
     };
 
     return (

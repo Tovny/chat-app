@@ -6,21 +6,10 @@ import { Message } from '../entity/Message.model';
 import { Room } from '../entity/Room.model';
 import { RoomUser } from '../entity/RoomUser.model';
 import { Request, Websocket } from '../types';
-import { broadcastUserConnection } from '../utils/broadcast-user-connection.util';
 import { SqlDataSource } from '../utils/db.util';
-import { handleError } from '../utils/handle-error.util';
-
-const roomQuery = async (id: string) => {
-    return await SqlDataSource.getRepository(Room)
-        .createQueryBuilder('room')
-        .select(['room.id', 'room.name'])
-        .where('room.id = :roomID', { roomID: id })
-        .leftJoinAndSelect('room.messages', 'message')
-        .leftJoinAndSelect('room.users', 'roomUsers')
-        .leftJoin('roomUsers.user', 'user')
-        .addSelect(['user.username', 'user.id'])
-        .getOne();
-};
+import { handleRequestError } from '../utils/handle-request-error.util';
+import { broadcastConnection } from '../ws-handlers/broadcast-connection.handler';
+import { getRoom as roomQuery } from '../utils/get-room.util';
 
 export const getUserRooms = async (
     req: Request,
@@ -43,7 +32,7 @@ export const getUserRooms = async (
             .getMany();
         res.json(rooms);
     } catch (err) {
-        handleError(err, 500, next);
+        handleRequestError(err, 500, next);
     }
 };
 
@@ -57,7 +46,7 @@ export const getRoom = async (
         const room = await roomQuery(id);
         res.json(room);
     } catch (err) {
-        handleError(err, 500, next);
+        handleRequestError(err, 500, next);
     }
 };
 
@@ -83,9 +72,20 @@ export const postCreateRoom = async (
         const roomUserResponse = await userRepo.save(newRoomUser);
         delete roomUserResponse.room.password;
         delete roomUserResponse.user.password;
-        res.json(roomUserResponse);
+        wss.clients.forEach((client: Websocket) => {
+            if (client.readyState === OPEN && client.user.id === req.user.id) {
+                client.rooms.push(roomUserResponse);
+                client.send(
+                    JSON.stringify({
+                        type: 'joinedRoom',
+                        payload: roomUserResponse,
+                    })
+                );
+            }
+        });
+        res.sendStatus(200);
     } catch (err) {
-        handleError(err, 500, next);
+        handleRequestError(err, 500, next);
     }
 };
 
@@ -100,28 +100,28 @@ export const postJoinRoom = async (
         const room = await SqlDataSource.getRepository(Room)
             .createQueryBuilder('room')
             .select(['room.id', 'room.name'])
-            .where('room.name = :name', { name }) // room joiner ne dobi online userjev
+            .where('room.name = :name', { name })
             .getOne();
         const repo = SqlDataSource.getRepository(RoomUser);
         const newRoomUser = repo.create({ user: req.user, room: room });
         const roomUser = await repo.save(newRoomUser);
-        let userSockets: Websocket[] = [];
+        let userSocket: Websocket;
         const updatedRoom = await roomQuery(room.id);
         wss.clients.forEach((client: Websocket) => {
             if (client.user.id === req.user.id) {
                 client.rooms.push(roomUser);
-                userSockets.push(client);
+                if (!userSocket) {
+                    userSocket = client;
+                }
             }
             client.send(
                 JSON.stringify({ type: 'roomUpdate', payload: updatedRoom })
             );
         });
-        userSockets.forEach((socket) => {
-            broadcastUserConnection(socket, room);
-        });
+        broadcastConnection(userSocket, roomUser);
         res.json(roomUser);
     } catch (err) {
-        handleError(err, 500, next);
+        handleRequestError(err, 500, next);
     }
 };
 
@@ -149,6 +149,6 @@ export const postRoomMessage = async (
         });
         res.sendStatus(200);
     } catch (err) {
-        handleError(err, 500, next);
+        handleRequestError(err, 500, next);
     }
 };

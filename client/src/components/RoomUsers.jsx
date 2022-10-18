@@ -1,6 +1,7 @@
 import { useContext, useState } from 'react';
 import { useEffect } from 'react';
 import { AppContext } from '../App';
+import {uniqBy} from 'lodash'
 
 export function RoomUsers({ data }) {
     const [offlineUsers, setOfflineUsers] = useState([]);
@@ -14,9 +15,9 @@ export function RoomUsers({ data }) {
         let offlineUsers = data.users.filter(
             (u) => !onlineUsers.map((user) => user.id).includes(u.user.id)
         );
-        setOnlineMembers(online);
+        setOnlineMembers(uniqBy(online,'id'));
 
-        setOfflineUsers(offlineUsers);
+        setOfflineUsers(uniqBy(offlineUsers,'id'));
     }, [data, onlineUsers]);
 
     return (

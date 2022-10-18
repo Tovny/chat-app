@@ -6,7 +6,8 @@ import { RoomUsers } from './RoomUsers';
 
 export function Room() {
     const [roomData, setRoomData] = useState(null);
-    const { room, user, setRoom, rooms } = useContext(AppContext);
+    const [message, setMessage] = useState('');
+    const { room, user, rooms, messages, dispatch } = useContext(AppContext);
 
     useEffect(() => {
         fetch('http://localhost:5000/rooms/' + room.id, {
@@ -15,6 +16,7 @@ export function Room() {
             .then((res) => res.json())
             .then((data) => {
                 setRoomData(data);
+                return dispatch({ type: 'messages', payload: data.messages });
             });
     }, [room]);
 
@@ -23,7 +25,19 @@ export function Room() {
         fetch('http://localhost:5000/rooms/leave/' + roomUser.id, {
             method: 'DELETE',
             headers: { Authorization: `bearer token ${user}` },
-        }).then(() => setRoom(null));
+        }).then(() => dispatch({ type: 'setRoom', payload: null }));
+    };
+
+    const handleSubmit = (evt) => {
+        evt.preventDefault();
+        fetch('http://localhost:5000/rooms/message/' + room.id, {
+            method: 'POST',
+            headers: {
+                Authorization: `bearer token ${user}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ content: message }),
+        }).then(() => setMessage(''));
     };
 
     return (
@@ -31,7 +45,43 @@ export function Room() {
             <h1>{room.name}</h1>
             <button onClick={() => leaveRoom()}>Leave Room</button>
             <div className="flex">
-                <div className="grow">messages here</div>
+                <div
+                    className="flex column grow"
+                    style={{ height: 'calc(100vh - 200px)' }}
+                >
+                    <div style={{ overflow: 'auto' }}>
+                        {messages.map((msg) => (
+                            <div style={{ marginLeft: '1rem' }}>
+                                <div class="flex">
+                                    <h4
+                                        style={{
+                                            margin: '0.25rem',
+                                            marginLeft: 0,
+                                        }}
+                                    >
+                                        {msg.user.username},{' '}
+                                        {new Date(
+                                            msg.created_at
+                                        ).toDateString()}
+                                        :
+                                    </h4>{' '}
+                                </div>
+                                <div class="flex">{msg.content}</div>
+                            </div>
+                        ))}
+                    </div>
+                    <form
+                        style={{ marginTop: 'auto', width: '100%' }}
+                        onSubmit={handleSubmit}
+                    >
+                        <input
+                            style={{ width: '80%' }}
+                            placeholder="message here"
+                            value={message}
+                            onChange={(evt) => setMessage(evt.target.value)}
+                        ></input>
+                    </form>
+                </div>
                 {roomData && <RoomUsers data={roomData} />}
             </div>
         </div>

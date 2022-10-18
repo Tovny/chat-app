@@ -11,7 +11,7 @@ import { useReducer } from 'react';
 
 export const AppContext = createContext({});
 
-const initialState = { onlineUsers: [], messages: [], rooms: [] };
+const initialState = { onlineUsers: [], messages: [], rooms: [], room: null };
 
 const reducer = (state, action) => {
     if (action.type === 'users') {
@@ -36,6 +36,9 @@ const reducer = (state, action) => {
         return { ...state, messages: action.payload };
     }
     if (action.type === 'message') {
+        if (action.payload.room.id !== state.room.id) {
+            return state;
+        }
         return { ...state, messages: [...state.messages, action.payload] };
     }
 
@@ -57,12 +60,14 @@ const reducer = (state, action) => {
         );
         return { ...state, rooms: filteredRooms };
     }
+    if (action.type === 'setRoom') {
+        return { ...state, room: action.payload };
+    }
 };
 
 function App() {
     const [socket, setSocket] = useState(null);
     const [user, setUser] = useState(null);
-    const [room, setRoom] = useState(null);
     const [roomUsers, setRoomUsers] = useState([]);
     const [state, dispatch] = useReducer(reducer, initialState);
 
@@ -74,7 +79,6 @@ function App() {
 
         const ws = webSocket('ws://localhost:5000/jwt=' + user);
         ws.subscribe((data) => {
-            console.log(data);
             if (data.type === 'connection') {
                 return dispatch({ type: 'user', payload: data.payload });
             }
@@ -88,13 +92,13 @@ function App() {
                 return dispatch({ type: 'message', payload: data.payload });
             }
             if (data.type === 'roomUpdate') {
-                setRoom(data.payload);
+                return dispatch({ type: 'setRoom', payload: data.payload });
             }
             if (data.type === 'joinedRoom') {
                 return dispatch({ type: 'room', payload: data.payload });
             }
             if (data.type === 'leftRoom') {
-                setRoom(null);
+                dispatch({ type: 'setRoom', payload: null });
                 return dispatch({ type: 'leftRoom', payload: data.payload });
             }
         });
@@ -108,12 +112,11 @@ function App() {
                 socket,
                 user,
                 rooms: state.rooms,
-                room,
+                room: state.room,
                 roomUsers,
                 messages: state.messages,
                 onlineUsers: state.onlineUsers,
                 setUser,
-                setRoom,
                 setRoomUsers,
                 dispatch,
             }}
@@ -137,7 +140,7 @@ function App() {
                                 <Rooms />
                                 <JoinRoom />
                             </div>
-                            {room && <Room />}
+                            {state.room && <Room />}
                         </div>
                     </>
                 )}

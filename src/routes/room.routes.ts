@@ -121,7 +121,6 @@ roomRouter.post(
                 try {
                     const { id } = req.params;
                     const roomUser = await getRoomUser(req.user.id, id);
-
                     if (!roomUser) {
                         return Promise.reject({
                             statusCode: 401,

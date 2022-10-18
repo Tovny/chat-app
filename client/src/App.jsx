@@ -24,11 +24,12 @@ const reducer = (state, action) => {
         };
     }
     if (action.type === 'disconnect') {
+        const filteredUsers = state.onlineUsers.filter(
+            (u) => u.id !== action.payload.id
+        );
         return {
             ...state,
-            onlineUsers: state.onlineUsers.filter(
-                (u) => u.id !== action.payload.id
-            ),
+            onlineUsers: filteredUsers,
         };
     }
     if (action.type === 'messages') {
@@ -49,6 +50,12 @@ const reducer = (state, action) => {
         const index = state.rooms.findIndex((r) => r.id === action.payload.id);
         newRooms[index] = action.payload;
         return { ...state, rooms: newRooms };
+    }
+    if (action.type === 'leftRoom') {
+        const filteredRooms = state.rooms.filter(
+            (r) => r.id !== action.payload.id
+        );
+        return { ...state, rooms: filteredRooms };
     }
 };
 
@@ -84,8 +91,12 @@ function App() {
                 setRoom(data.payload);
             }
             if (data.type === 'joinedRoom') {
-                return dispatch({type:"room", payload: data.payload})
-            } 
+                return dispatch({ type: 'room', payload: data.payload });
+            }
+            if (data.type === 'leftRoom') {
+                setRoom(null);
+                return dispatch({ type: 'leftRoom', payload: data.payload });
+            }
         });
 
         setSocket(ws);
@@ -110,14 +121,25 @@ function App() {
             <div className="App">
                 {!user && <Auth />}{' '}
                 {user && (
-                    <div className="flex">
-                        <div>
-                            <CreateRoom />
-                            <Rooms />
-                            <JoinRoom />
+                    <>
+                        {' '}
+                        <button
+                            onClick={() => {
+                                socket.complete();
+                                setUser(null);
+                            }}
+                        >
+                            Logout
+                        </button>
+                        <div className="flex">
+                            <div>
+                                <CreateRoom />
+                                <Rooms />
+                                <JoinRoom />
+                            </div>
+                            {room && <Room />}
                         </div>
-                        {room && <Room />}
-                    </div>
+                    </>
                 )}
             </div>
         </AppContext.Provider>

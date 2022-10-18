@@ -1,7 +1,8 @@
 import { compare } from 'bcrypt';
 import { Router } from 'express';
-import { body } from 'express-validator';
+import { body, param } from 'express-validator';
 import {
+    deleteLeaveRoom,
     getRoom,
     getUserRooms,
     postCreateRoom,
@@ -9,6 +10,7 @@ import {
     postRoomMessage,
 } from '../controllers/room.controller';
 import { Room } from '../entity/Room.model';
+import { RoomUser } from '../entity/RoomUser.model';
 import { requireAuth } from '../middleware/require-auth.middleware';
 import { validateInput } from '../middleware/validate-input.middleware';
 import { SqlDataSource } from '../utils/db.util';
@@ -84,6 +86,29 @@ roomRouter.post(
         }),
     ]),
     postJoinRoom
+);
+
+roomRouter.delete(
+    '/leave/:id',
+    requireAuth,
+    validateInput([
+        param('id').custom(async (id, { req }) => {
+            const roomUser = await SqlDataSource.getRepository(RoomUser)
+                .createQueryBuilder('roomUser')
+                .where('roomUser.id = :id', { id })
+                .andWhere('roomUser.user.id = :userId', {
+                    userId: req.user.id,
+                })
+                .getOne();
+            if (!roomUser) {
+                return Promise.reject({
+                    statusCode: 403,
+                    msg: 'Not authorized.',
+                });
+            }
+        }),
+    ]),
+    deleteLeaveRoom
 );
 
 roomRouter.post(

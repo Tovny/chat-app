@@ -2,10 +2,10 @@ import { NextFunction } from 'express';
 import { ResponseError } from '../types';
 
 export function handleRequestError(
-    error: ResponseError,
+    error: Error,
     statusCode: number,
     next: NextFunction
 ) {
-    error.statusCode = statusCode;
+    (error as ResponseError).statusCode = statusCode;
     next(error);
 }

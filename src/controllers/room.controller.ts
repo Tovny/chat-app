@@ -125,6 +125,49 @@ export const postJoinRoom = async (
     }
 };
 
+export const deleteLeaveRoom = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const { id } = req.params;
+    try {
+        const roomUser = await SqlDataSource.getRepository(RoomUser)
+            .createQueryBuilder('roomUser')
+            .where('roomUser.id = :id', { id })
+            .leftJoin('roomUser.room', 'room')
+            .addSelect('room.id')
+            .getOne();
+        const { affected } = await SqlDataSource.getRepository(RoomUser).delete(
+            id
+        );
+        if (!affected) {
+            return handleRequestError(
+                new Error('Could not leave room.'),
+                500,
+                next
+            );
+        }
+        const updatedRoom = await roomQuery(roomUser.room.id);
+        wss.clients.forEach((client: Websocket) => {
+            if (client.user.id === req.user.id) {
+                client.rooms = client.rooms.filter(
+                    (room) => room.id !== roomUser.id
+                );
+                return client.send(
+                    JSON.stringify({ type: 'leftRoom', payload: roomUser })
+                );
+            }
+            client.send(
+                JSON.stringify({ type: 'roomUpdate', payload: updatedRoom })
+            );
+        });
+        res.sendStatus(200);
+    } catch (err) {
+        handleRequestError(err, 500, next);
+    }
+};
+
 export const postRoomMessage = async (
     req: Request,
     res: Response,

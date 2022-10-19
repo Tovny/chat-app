@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useState } from 'react';
 import { useContext } from 'react';
 import { AppContext } from '../App';
+import { Message } from './Message';
 import { RoomUsers } from './RoomUsers';
 
 export function Room() {
@@ -51,23 +52,7 @@ export function Room() {
                 >
                     <div style={{ overflow: 'auto' }}>
                         {messages.map((msg) => (
-                            <div style={{ marginLeft: '1rem' }}>
-                                <div class="flex">
-                                    <h4
-                                        style={{
-                                            margin: '0.25rem',
-                                            marginLeft: 0,
-                                        }}
-                                    >
-                                        {msg.user.username},{' '}
-                                        {new Date(
-                                            msg.created_at
-                                        ).toDateString()}
-                                        :
-                                    </h4>{' '}
-                                </div>
-                                <div class="flex">{msg.content}</div>
-                            </div>
+                            <Message message={msg} />
                         ))}
                     </div>
                     <form

@@ -1,5 +1,6 @@
 import { NextFunction, Response } from 'express';
-import { Request, ResponseError } from '../types';
+import { Request } from '../types';
+import { ResponseError } from '../utils/response-error.util';
 
 export function errorHandler(
     err: ResponseError,
@@ -8,5 +9,5 @@ export function errorHandler(
     ___: NextFunction
 ) {
     console.error(err);
-    res.status(err.statusCode).json(err);
+    res.status(err.statusCode).send(err.message);
 }

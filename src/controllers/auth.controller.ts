@@ -3,7 +3,7 @@ import { NextFunction, Request, Response } from 'express';
 import { sign } from 'jsonwebtoken';
 import { User } from '../entity/User.model';
 import { SqlDataSource } from '../utils/db.util';
-import { handleRequestError } from '../utils/handle-request-error.util';
+import { ResponseError } from '../utils/response-error.util';
 
 export const postLogin = async (
     req: Request,
@@ -20,7 +20,7 @@ export const postLogin = async (
         const token = sign(JSON.stringify(user), process.env.JWT_SECRET);
         res.json(token);
     } catch (err) {
-        handleRequestError(err, 500, next);
+        next(new ResponseError(err.message, 500));
     }
 };
 
@@ -41,6 +41,6 @@ export const postRegister = async (
         delete dbUser.password;
         res.json(dbUser);
     } catch (err) {
-        handleRequestError(err, 500, next);
+        next(new ResponseError(err.message, 500));
     }
 };

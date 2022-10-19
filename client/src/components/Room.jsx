@@ -30,7 +30,7 @@ export function Room() {
 
     const handleSubmit = (evt) => {
         evt.preventDefault();
-        fetch('http://localhost:5000/rooms/message/' + room.id, {
+        fetch('http://localhost:5000/messages/' + room.id, {
             method: 'POST',
             headers: {
                 Authorization: `bearer token ${user}`,

@@ -3,7 +3,7 @@ import { Request } from '../types';
 
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
     if (!req.user) {
-        return res.sendStatus(401);
+        return res.status(403).send('User not found.');
     }
     next();
 }

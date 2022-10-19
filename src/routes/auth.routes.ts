@@ -8,11 +8,14 @@ import { postLogin, postRegister } from '../controllers/auth.controller';
 
 export const authRouter = Router();
 
+const lengthMessage = 'needs to be at least 4 characters long.';
+
 authRouter.post(
     '/login',
     validateInput([
         body('username')
             .isLength({ min: 4 })
+            .withMessage(lengthMessage)
             .custom(async (username: string, { req }) => {
                 const { password } = req.body;
                 const repo = SqlDataSource.getRepository(User);
@@ -20,14 +23,14 @@ authRouter.post(
                 if (!user) {
                     return Promise.reject({
                         statusCode: 400,
-                        msg: 'User with username does not exist.',
+                        message: 'User with username does not exist.',
                     });
                 }
                 const passMatches = await compare(password, user.password);
                 if (!passMatches) {
                     return Promise.reject({
                         statusCode: 401,
-                        msg: 'Password does not match.',
+                        message: 'Password does not match.',
                     });
                 }
             }),
@@ -40,6 +43,7 @@ authRouter.post(
     validateInput([
         body('username')
             .isLength({ min: 4 })
+            .withMessage(lengthMessage)
             .custom(async (username: string, { req }) => {
                 const { email } = req.body;
                 const user = await SqlDataSource.getRepository(User)
@@ -54,17 +58,21 @@ authRouter.post(
                     if (user.username === username) {
                         return Promise.reject({
                             statusCode: 403,
-                            msg: 'Username taken.',
+                            message: 'Username taken.',
                         });
                     }
                     return Promise.reject({
                         statusCode: 403,
-                        msg: 'User with email already exists.',
+                        message: 'User with email already exists.',
                     });
                 }
             }),
-        body('email').isEmail(),
-        body('password').isAlphanumeric().isLength({ min: 4 }),
+        body('email').isEmail().withMessage('not valid'),
+        body('password')
+            .isAlphanumeric()
+            .withMessage('contains invalid characters.')
+            .isLength({ min: 4 })
+            .withMessage(lengthMessage),
     ]),
     postRegister
 );

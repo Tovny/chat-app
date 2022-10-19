@@ -2,14 +2,13 @@ import { hash } from 'bcrypt';
 import { NextFunction, Response } from 'express';
 import { OPEN } from 'ws';
 import { wss } from '..';
-import { Message } from '../entity/Message.model';
 import { Room } from '../entity/Room.model';
 import { RoomUser } from '../entity/RoomUser.model';
 import { Request, Websocket } from '../types';
 import { SqlDataSource } from '../utils/db.util';
-import { handleRequestError } from '../utils/handle-request-error.util';
 import { broadcastConnection } from '../ws-handlers/broadcast-connection.handler';
 import { getRoom as roomQuery } from '../utils/get-room.util';
+import { ResponseError } from '../utils/response-error.util';
 
 export const getUserRooms = async (
     req: Request,
@@ -32,7 +31,7 @@ export const getUserRooms = async (
             .getMany();
         res.json(rooms);
     } catch (err) {
-        handleRequestError(err, 500, next);
+        next(new ResponseError(err.message, 500));
     }
 };
 
@@ -46,7 +45,7 @@ export const getRoom = async (
         const room = await roomQuery(id);
         res.json(room);
     } catch (err) {
-        handleRequestError(err, 500, next);
+        next(new ResponseError(err.message, 500));
     }
 };
 
@@ -85,7 +84,7 @@ export const postCreateRoom = async (
         });
         res.sendStatus(200);
     } catch (err) {
-        handleRequestError(err, 500, next);
+        next(new ResponseError(err.message, 500));
     }
 };
 
@@ -121,7 +120,7 @@ export const postJoinRoom = async (
         broadcastConnection(userSocket, roomUser);
         res.json(roomUser);
     } catch (err) {
-        handleRequestError(err, 500, next);
+        next(new ResponseError(err.message, 500));
     }
 };
 
@@ -130,32 +129,21 @@ export const deleteLeaveRoom = async (
     res: Response,
     next: NextFunction
 ) => {
-    const { id } = req.params;
     try {
-        const roomUser = await SqlDataSource.getRepository(RoomUser)
-            .createQueryBuilder('roomUser')
-            .where('roomUser.id = :id', { id })
-            .leftJoin('roomUser.room', 'room')
-            .addSelect('room.id')
-            .getOne();
         const { affected } = await SqlDataSource.getRepository(RoomUser).delete(
-            id
+            req.roomUser.id
         );
         if (!affected) {
-            return handleRequestError(
-                new Error('Could not leave room.'),
-                500,
-                next
-            );
+            throw new ResponseError('Could not leave room.', 500);
         }
-        const updatedRoom = await roomQuery(roomUser.room.id);
+        const updatedRoom = await roomQuery(req.roomUser.room.id);
         wss.clients.forEach((client: Websocket) => {
             if (client.user.id === req.user.id) {
                 client.rooms = client.rooms.filter(
-                    (room) => room.id !== roomUser.id
+                    (room) => room.id !== req.roomUser.id
                 );
                 return client.send(
-                    JSON.stringify({ type: 'leftRoom', payload: roomUser })
+                    JSON.stringify({ type: 'leftRoom', payload: req.roomUser })
                 );
             }
             client.send(
@@ -164,34 +152,6 @@ export const deleteLeaveRoom = async (
         });
         res.sendStatus(200);
     } catch (err) {
-        handleRequestError(err, 500, next);
-    }
-};
-
-export const postRoomMessage = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-) => {
-    const { content } = req.body;
-    const { id } = req.params;
-    try {
-        const repo = SqlDataSource.getRepository(Message);
-        const room = await SqlDataSource.getRepository(Room).findOneBy({ id });
-        const newMessage = repo.create({ content, user: req.user, room: room });
-        const response = await repo.save(newMessage);
-        wss.clients.forEach((client: Websocket) => {
-            if (client.readyState !== OPEN) {
-                return;
-            }
-            if (client.rooms.some((r) => r.room.id === room.id)) {
-                client.send(
-                    JSON.stringify({ type: 'message', payload: response })
-                );
-            }
-        });
-        res.sendStatus(200);
-    } catch (err) {
-        handleRequestError(err, 500, next);
+        next(new ResponseError(err.message, 500));
     }
 };

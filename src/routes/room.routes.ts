@@ -7,14 +7,14 @@ import {
     getUserRooms,
     postCreateRoom,
     postJoinRoom,
-    postRoomMessage,
 } from '../controllers/room.controller';
 import { Room } from '../entity/Room.model';
-import { RoomUser } from '../entity/RoomUser.model';
+import { getRoomUser } from '../middleware/get-room-user.middleware';
 import { requireAuth } from '../middleware/require-auth.middleware';
 import { validateInput } from '../middleware/validate-input.middleware';
 import { SqlDataSource } from '../utils/db.util';
-import { getRoomUser } from '../utils/get-room-user.util';
+import { getRoomUserUtil } from '../utils/get-room-user.util';
+import { ResponseError } from '../utils/response-error.util';
 
 export const roomRouter = Router();
 
@@ -38,7 +38,7 @@ roomRouter.post(
                     if (room) {
                         return Promise.reject({
                             statusCode: 403,
-                            msg: 'Room with given input already exits',
+                            message: 'Room with given input already exits',
                         });
                     }
                 } catch (err) {
@@ -63,21 +63,24 @@ roomRouter.post(
                 if (!room) {
                     return Promise.reject({
                         statusCode: 403,
-                        msg: 'Room does not exist.',
+                        message: 'Room does not exist.',
                     });
                 }
                 const passMatches = await compare(password, room.password);
                 if (!passMatches) {
                     return Promise.reject({
                         statusCode: 403,
-                        msg: 'Passwords do not match.',
+                        message: 'Passwords do not match.',
                     });
                 }
-                const roomUser = await getRoomUser(req.user.id, room.id);
+                const roomUser = await getRoomUserUtil({
+                    userId: req.user.id,
+                    roomId: room.id,
+                });
                 if (roomUser) {
                     return Promise.reject({
                         statusCode: 403,
-                        msg: 'Already a member.',
+                        message: 'Already a member.',
                     });
                 }
             } catch (err) {
@@ -89,48 +92,19 @@ roomRouter.post(
 );
 
 roomRouter.delete(
-    '/leave/:id',
+    '/leave/:roomUserId',
     requireAuth,
+    getRoomUser,
     validateInput([
-        param('id').custom(async (id, { req }) => {
-            const roomUser = await SqlDataSource.getRepository(RoomUser)
-                .createQueryBuilder('roomUser')
-                .where('roomUser.id = :id', { id })
-                .andWhere('roomUser.user.id = :userId', {
-                    userId: req.user.id,
-                })
-                .getOne();
-            if (!roomUser) {
-                return Promise.reject({
-                    statusCode: 403,
-                    msg: 'Not authorized.',
-                });
+        param('roomUserId').custom(async (_, { req }) => {
+            if (!req.roomUser) {
+                throw new ResponseError(
+                    'Not allowed to post in this room',
+                    403
+                );
             }
+            return;
         }),
     ]),
     deleteLeaveRoom
-);
-
-roomRouter.post(
-    '/message/:id',
-    requireAuth,
-    validateInput([
-        body('content')
-            .isLength({ min: 5 })
-            .custom(async (_, { req }) => {
-                try {
-                    const { id } = req.params;
-                    const roomUser = await getRoomUser(req.user.id, id);
-                    if (!roomUser) {
-                        return Promise.reject({
-                            statusCode: 401,
-                            msg: 'You do not have permission to post in this room.',
-                        });
-                    }
-                } catch (err) {
-                    return Promise.reject(err);
-                }
-            }),
-    ]),
-    postRoomMessage
 );

@@ -2,12 +2,13 @@ import 'reflect-metadata';
 import express from 'express';
 import { SqlDataSource } from './utils/db.util';
 import { roomRouter } from './routes/room.routes';
+import { authRouter } from './routes/auth.routes';
+import { messageRouter } from './routes/message.routes';
 import { json } from 'body-parser';
 import { getUser } from './middleware/get-user.middleware';
 import { errorHandler } from './middleware/handle-error.middleware';
 import { createServer, IncomingMessage } from 'http';
 import { WebSocketServer } from 'ws';
-import { authRouter } from './routes/auth.routes';
 import { Websocket } from './types';
 import { cors } from './middleware/cors.middleware';
 import { User } from './entity/User.model';
@@ -19,12 +20,13 @@ const server = createServer(app);
 export const wss = new WebSocketServer({ noServer: true });
 
 app.use(json());
-app.use(cors);
 
+app.use(cors);
 app.use(getUser);
 
 app.use(authRouter);
 app.use('/rooms', roomRouter);
+app.use('/messages', messageRouter);
 
 app.use(errorHandler);
 

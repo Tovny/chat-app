@@ -9,14 +9,15 @@ export function validateInput(validators: ValidationChain[]) {
         next: NextFunction
     ) {
         await Promise.all(validators.map((validation) => validation.run(req)));
-
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             const [error] = errors.array();
             if (typeof error.msg === 'object') {
-                return res.status(error.msg.statusCode).send(error.msg.msg);
+                return res.status(error.msg.statusCode).send(error.msg.message);
             }
-            return res.status(403).send(`${error.msg}, ${error.param}`);
+            return res
+                .status(403)
+                .send(`${error.param.toLocaleUpperCase()} ${error.msg}`);
         }
         next();
     };

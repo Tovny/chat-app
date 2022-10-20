@@ -17,6 +17,7 @@ export function Room() {
             .then((res) => res.json())
             .then((data) => {
                 setRoomData(data);
+                console.log(data);
                 return dispatch({ type: 'messages', payload: data.messages });
             });
     }, [room]);
@@ -41,34 +42,54 @@ export function Room() {
         }).then(() => setMessage(''));
     };
 
+    const getMessages = () => {
+        fetch(
+            'http://localhost:5000/messages/' +
+                room.id +
+                `/?skip=${messages.length}&take=1`,
+            {
+                method: 'GET',
+                headers: { Authorization: `bearer token ${user}` },
+            }
+        ).then((data) => {
+            console.log(data);
+            dispatch({ type: 'addMessages', payload: null });
+        });
+    };
+
     return (
-        <div className="flex column grow">
-            <h1>{room.name}</h1>
-            <button onClick={() => leaveRoom()}>Leave Room</button>
-            <div className="flex">
-                <div
-                    className="flex column grow"
-                    style={{ height: 'calc(100vh - 200px)' }}
-                >
-                    <div style={{ overflow: 'auto' }}>
-                        {messages.map((msg) => (
-                            <Message message={msg} />
-                        ))}
-                    </div>
-                    <form
-                        style={{ marginTop: 'auto', width: '100%' }}
-                        onSubmit={handleSubmit}
+        roomData && (
+            <div className="flex column grow">
+                <h1>{room.name}</h1>
+                <button onClick={leaveRoom}>Leave Room</button>
+                {roomData.messageTotal > messages.length && (
+                    <button onClick={getMessages}>Load more messages</button>
+                )}
+                <div className="flex">
+                    <div
+                        className="flex column grow"
+                        style={{ height: 'calc(100vh - 200px)' }}
                     >
-                        <input
-                            style={{ width: '80%' }}
-                            placeholder="message here"
-                            value={message}
-                            onChange={(evt) => setMessage(evt.target.value)}
-                        ></input>
-                    </form>
+                        <div style={{ overflow: 'auto' }}>
+                            {messages.map((msg) => (
+                                <Message message={msg} />
+                            ))}
+                        </div>
+                        <form
+                            style={{ marginTop: 'auto', width: '100%' }}
+                            onSubmit={handleSubmit}
+                        >
+                            <input
+                                style={{ width: '80%' }}
+                                placeholder="message here"
+                                value={message}
+                                onChange={(evt) => setMessage(evt.target.value)}
+                            ></input>
+                        </form>
+                    </div>
+                    {roomData && <RoomUsers data={roomData} />}
                 </div>
-                {roomData && <RoomUsers data={roomData} />}
             </div>
-        </div>
+        )
     );
 }

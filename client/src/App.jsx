@@ -77,6 +77,9 @@ const reducer = (state, action) => {
         );
         return { ...state, messages: filteredMessages };
     }
+    if (action.type === 'addMessages') {
+        return { ...state, messages: [...state.messages, ...action.payload] };
+    }
 };
 
 function App() {

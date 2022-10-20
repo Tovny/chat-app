@@ -7,6 +7,31 @@ import { SqlDataSource } from '../utils/db.util';
 import { wss } from '..';
 import { ResponseError } from '../utils/response-error.util';
 
+export const getRoomMessages = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const { id } = req.params;
+    const { take, skip } = req.query;
+    try {
+        const messages = await SqlDataSource.getRepository(Message)
+            .createQueryBuilder('messages')
+            .where('messages.room.id = :id', { id })
+            .addOrderBy('messages.created_at', 'DESC')
+            .take(Number(take))
+            .skip(Number(skip))
+            .leftJoin('messages.user', 'user')
+            .addSelect(['user.id', 'user.username'])
+            .leftJoin('messages.room', 'room')
+            .addSelect(['room.id', 'room.name'])
+            .getMany();
+        res.json(messages);
+    } catch (err) {
+        next(new ResponseError(err.message, 500));
+    }
+};
+
 export const postRoomMessage = async (
     req: Request,
     res: Response,
@@ -73,7 +98,6 @@ export const deleteRoomMessage = async (
         const response = await SqlDataSource.getRepository(Message).delete(
             req.message.id
         );
-        console.log(response);
         if (response.affected) {
             wss.clients.forEach((client: Websocket) => {
                 if (client.readyState !== OPEN) {

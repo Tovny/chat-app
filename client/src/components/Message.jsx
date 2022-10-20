@@ -14,21 +14,28 @@ export function Message({ message }) {
 
     const handleSubmit = (evt) => {
         evt.preventDefault();
-        if (editValue !== message.value) {
-            fetch('http://localhost:5000/messages/' + message.id, {
-                method: 'PATCH',
-                headers: {
-                    Authorization: `bearer token ${user}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ content: message }),
-            });
-        }
+        fetch('http://localhost:5000/messages/' + message.id, {
+            method: 'PUT',
+            headers: {
+                Authorization: `bearer token ${user}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ content: editValue }),
+        }).then(() => setShowEdit(false));
+    };
+
+    const handleDelete = () => {
+        fetch('http://localhost:5000/messages/' + message.id, {
+            method: 'DELETE',
+            headers: {
+                Authorization: `bearer token ${user}`,
+            },
+        });
     };
 
     return (
         <div style={{ margin: '0 1rem' }}>
-            <div class="flex">
+            <div className="flex">
                 <h4
                     style={{
                         margin: '0.25rem',
@@ -40,10 +47,10 @@ export function Message({ message }) {
                 </h4>{' '}
             </div>
 
-            <div class="flex">
+            <div className="flex">
                 {message.content}{' '}
                 <div style={{ marginLeft: 'auto' }}>
-                    <button>delete</button>
+                    <button onClick={handleDelete}>delete</button>
                     <button onClick={() => setShowEdit(!showEdit)}>edit</button>
                 </div>
             </div>

@@ -63,6 +63,20 @@ const reducer = (state, action) => {
     if (action.type === 'setRoom') {
         return { ...state, room: action.payload };
     }
+    if (action.type === 'messageEdit') {
+        const newMessages = [...state.messages];
+        const index = state.messages.findIndex(
+            (m) => m.id === action.payload.id
+        );
+        newMessages[index] = action.payload;
+        return { ...state, messages: newMessages };
+    }
+    if (action.type === 'messageDelete') {
+        const filteredMessages = state.messages.filter(
+            (m) => m.id !== action.payload.id
+        );
+        return { ...state, messages: filteredMessages };
+    }
 };
 
 function App() {
@@ -100,6 +114,15 @@ function App() {
             if (data.type === 'leftRoom') {
                 dispatch({ type: 'setRoom', payload: null });
                 return dispatch({ type: 'leftRoom', payload: data.payload });
+            }
+            if (data.type === 'messageEdit') {
+                return dispatch({ type: 'messageEdit', payload: data.payload });
+            }
+            if (data.type === 'messageDelete') {
+                return dispatch({
+                    type: 'messageDelete',
+                    payload: data.payload,
+                });
             }
         });
 

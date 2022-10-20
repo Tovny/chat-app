@@ -1,10 +1,15 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/require-auth.middleware';
 import { validateInput } from '../middleware/validate-input.middleware';
-import { body } from 'express-validator';
-import { postRoomMessage } from '../controllers/message.controller';
+import { body, param } from 'express-validator';
+import {
+    deleteRoomMessage,
+    postRoomMessage,
+    putRoomMessage,
+} from '../controllers/message.controller';
 import { getRoomUser } from '../middleware/get-room-user.middleware';
 import { ResponseError } from '../utils/response-error.util';
+import { getUserMessage } from '../middleware/get-user-message.middleware';
 
 export const messageRouter = Router();
 
@@ -29,4 +34,42 @@ messageRouter.post(
     postRoomMessage
 );
 
-messageRouter.put('/:id', requireAuth, validateInput([]));
+messageRouter.put(
+    '/:id',
+    requireAuth,
+    getUserMessage,
+    validateInput([
+        body('content')
+            .isLength({ min: 1 })
+            .withMessage('content needs to be at least one character long.')
+            .custom((content, { req }) => {
+                if (!req.message) {
+                    throw new ResponseError('Message not found.', 404);
+                }
+                if (req.message.content === content) {
+                    throw new ResponseError(
+                        'Can not use the same message.',
+                        403
+                    );
+                }
+                return true;
+            }),
+    ]),
+    putRoomMessage
+);
+
+messageRouter.delete(
+    '/:id',
+    requireAuth,
+    getUserMessage,
+    validateInput([
+        param('id').custom((_, { req }) => {
+            if (!req.message) {
+                throw new ResponseError('Message not found.', 404);
+            }
+
+            return true;
+        }),
+    ]),
+    deleteRoomMessage
+);

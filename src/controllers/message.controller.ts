@@ -36,3 +36,64 @@ export const postRoomMessage = async (
         next(new ResponseError(err.message, 500));
     }
 };
+
+export const putRoomMessage = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const { content } = req.body;
+    try {
+        const message = { ...req.message, content };
+        const response = await SqlDataSource.getRepository(Message).save(
+            message
+        );
+        wss.clients.forEach((client: Websocket) => {
+            if (client.readyState !== OPEN) {
+                return;
+            }
+            if (client.rooms.some((r) => r.room.id === message.room.id)) {
+                client.send(
+                    JSON.stringify({ type: 'messageEdit', payload: response })
+                );
+            }
+        });
+        res.status(200);
+    } catch (err) {
+        next(new ResponseError(err.message, 500));
+    }
+};
+
+export const deleteRoomMessage = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const response = await SqlDataSource.getRepository(Message).delete(
+            req.message.id
+        );
+        console.log(response);
+        if (response.affected) {
+            wss.clients.forEach((client: Websocket) => {
+                if (client.readyState !== OPEN) {
+                    return;
+                }
+                if (
+                    client.rooms.some((r) => r.room.id === req.message.room.id)
+                ) {
+                    client.send(
+                        JSON.stringify({
+                            type: 'messageDelete',
+                            payload: req.message,
+                        })
+                    );
+                }
+            });
+            return res.status(200);
+        }
+        res.status(500).send('Could not delete message.');
+    } catch (err) {
+        next(new ResponseError(err.message, 500));
+    }
+};

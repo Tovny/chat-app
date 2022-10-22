@@ -9,6 +9,7 @@
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
         "noLib": false,
+        "skipLibCheck": true,
         "outDir": "./dist"
     },
     "include": ["src/*.ts"],

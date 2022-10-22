@@ -8,7 +8,7 @@ export const cors = (req: Request, res: Response, next: NextFunction) => {
     );
     res.header('Access-Control-Allow-Headers', '*');
     if (req.method === 'OPTIONS') {
-        res.sendStatus(200);
+        return res.sendStatus(200);
     }
     next();
 };

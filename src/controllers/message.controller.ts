@@ -71,7 +71,7 @@ export const putRoomMessage = async (
             message
         );
         broadcastMessageUpdate(response);
-        res.status(200);
+        res.sendStatus(200);
     } catch (err) {
         next(new ResponseError(err.message, 500));
     }
@@ -88,7 +88,7 @@ export const deleteRoomMessage = async (
         );
         if (response.affected) {
             broadcastMessageDeletion(req.message);
-            return res.status(200);
+            return res.sendStatus(200);
         }
         res.status(500).send('Could not delete message.');
     } catch (err) {

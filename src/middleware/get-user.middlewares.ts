@@ -16,7 +16,7 @@ export async function getUser(req: Request, _: Response, next: NextFunction) {
         user = await SqlDataSource.getRepository(User).findOneBy({
             id: `${token.id}`,
         });
-        client.set(token.id, JSON.stringify(user));
+        client.set(token.id, JSON.stringify(user), { EX: 60 * 30 });
     }
 
     req.user = user;

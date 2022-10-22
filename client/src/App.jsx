@@ -11,7 +11,13 @@ import { useReducer } from 'react';
 
 export const AppContext = createContext({});
 
-const initialState = { onlineUsers: [], messages: [], rooms: [], room: null };
+const initialState = {
+    onlineUsers: [],
+    messages: [],
+    rooms: [],
+    room: null,
+    countChange: 0,
+};
 
 const reducer = (state, action) => {
     if (action.type === 'users') {
@@ -39,7 +45,11 @@ const reducer = (state, action) => {
         if (action.payload.room.id !== state.room.id) {
             return state;
         }
-        return { ...state, messages: [...state.messages, action.payload] };
+        return {
+            ...state,
+            messages: [...state.messages, action.payload],
+            countChange: 1,
+        };
     }
 
     if (action.type === 'rooms') {
@@ -75,10 +85,13 @@ const reducer = (state, action) => {
         const filteredMessages = state.messages.filter(
             (m) => m.id !== action.payload.id
         );
-        return { ...state, messages: filteredMessages };
+        return { ...state, messages: filteredMessages, countChange: -1 };
     }
     if (action.type === 'addMessages') {
-        return { ...state, messages: [...state.messages, ...action.payload] };
+        return { ...state, messages: [...action.payload, ...state.messages] };
+    }
+    if (action.type === 'resetCountChange') {
+        return { ...state, countChange: 0 };
     }
 };
 
@@ -141,6 +154,7 @@ function App() {
                 room: state.room,
                 roomUsers,
                 messages: state.messages,
+                countChange: state.countChange,
                 onlineUsers: state.onlineUsers,
                 setUser,
                 setRoomUsers,

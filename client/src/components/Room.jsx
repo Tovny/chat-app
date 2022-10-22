@@ -8,7 +8,9 @@ import { RoomUsers } from './RoomUsers';
 export function Room() {
     const [roomData, setRoomData] = useState(null);
     const [message, setMessage] = useState('');
-    const { room, user, rooms, messages, dispatch } = useContext(AppContext);
+    const [msgTotal, setMsgTotal] = useState(0);
+    const { room, user, rooms, messages, countChange, dispatch } =
+        useContext(AppContext);
 
     useEffect(() => {
         fetch('http://localhost:5000/rooms/' + room.id, {
@@ -17,10 +19,17 @@ export function Room() {
             .then((res) => res.json())
             .then((data) => {
                 setRoomData(data);
-                console.log(data);
+                setMsgTotal(data.messageTotal);
                 return dispatch({ type: 'messages', payload: data.messages });
             });
     }, [room]);
+
+    useEffect(() => {
+        if (countChange) {
+            setMsgTotal(msgTotal + countChange);
+            dispatch({ type: 'resetCountChange' });
+        }
+    }, [countChange]);
 
     const leaveRoom = () => {
         const roomUser = rooms.find((r) => r.room.id === room.id);
@@ -51,10 +60,13 @@ export function Room() {
                 method: 'GET',
                 headers: { Authorization: `bearer token ${user}` },
             }
-        ).then((data) => {
-            console.log(data);
-            dispatch({ type: 'addMessages', payload: null });
-        });
+        )
+            .then((data) => {
+                return data.json();
+            })
+            .then((messages) => {
+                dispatch({ type: 'addMessages', payload: messages });
+            });
     };
 
     return (
@@ -62,7 +74,7 @@ export function Room() {
             <div className="flex column grow">
                 <h1>{room.name}</h1>
                 <button onClick={leaveRoom}>Leave Room</button>
-                {roomData.messageTotal > messages.length && (
+                {msgTotal > messages.length && (
                     <button onClick={getMessages}>Load more messages</button>
                 )}
                 <div className="flex">
@@ -72,7 +84,7 @@ export function Room() {
                     >
                         <div style={{ overflow: 'auto' }}>
                             {messages.map((msg) => (
-                                <Message message={msg} />
+                                <Message key={msg.id} message={msg} />
                             ))}
                         </div>
                         <form

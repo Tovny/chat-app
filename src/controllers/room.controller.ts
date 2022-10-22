@@ -1,14 +1,16 @@
 import { hash } from 'bcrypt';
 import { NextFunction, Response } from 'express';
-import { OPEN } from 'ws';
-import { wss } from '..';
 import { Room } from '../entity/Room.model';
 import { RoomUser } from '../entity/RoomUser.model';
-import { Request, Websocket } from '../types';
+import { Request } from '../types';
 import { SqlDataSource } from '../utils/db.util';
-import { broadcastConnection } from '../ws-handlers/broadcast-connection.handler';
 import { getRoom as roomQuery } from '../utils/get-room.util';
 import { ResponseError } from '../utils/response-error.util';
+import {
+    broadcastRoomCreation,
+    broadcastRoomJoin,
+    broadcastRoomLeave,
+} from '../ws-handlers/broadcast-room.handlers';
 
 export const getUserRooms = async (
     req: Request,
@@ -71,17 +73,7 @@ export const postCreateRoom = async (
         const roomUserResponse = await userRepo.save(newRoomUser);
         delete roomUserResponse.room.password;
         delete roomUserResponse.user.password;
-        wss.clients.forEach((client: Websocket) => {
-            if (client.readyState === OPEN && client.user.id === req.user.id) {
-                client.rooms.push(roomUserResponse);
-                client.send(
-                    JSON.stringify({
-                        type: 'joinedRoom',
-                        payload: roomUserResponse,
-                    })
-                );
-            }
-        });
+        broadcastRoomCreation(roomUserResponse);
         res.sendStatus(200);
     } catch (err) {
         next(new ResponseError(err.message, 500));
@@ -93,31 +85,16 @@ export const postJoinRoom = async (
     res: Response,
     next: NextFunction
 ) => {
-    const { name } = req.body;
-
     try {
-        const room = await SqlDataSource.getRepository(Room)
-            .createQueryBuilder('room')
-            .select(['room.id', 'room.name'])
-            .where('room.name = :name', { name })
-            .getOne();
+        delete req.foundRoom.password;
         const repo = SqlDataSource.getRepository(RoomUser);
-        const newRoomUser = repo.create({ user: req.user, room: room });
-        const roomUser = await repo.save(newRoomUser);
-        let userSocket: Websocket;
-        const updatedRoom = await roomQuery(room.id);
-        wss.clients.forEach((client: Websocket) => {
-            if (client.user.id === req.user.id) {
-                client.rooms.push(roomUser);
-                if (!userSocket) {
-                    userSocket = client;
-                }
-            }
-            client.send(
-                JSON.stringify({ type: 'roomUpdate', payload: updatedRoom })
-            );
+        const newRoomUser = repo.create({
+            user: req.user,
+            room: req.foundRoom,
         });
-        broadcastConnection(userSocket, roomUser);
+        const roomUser = await repo.save(newRoomUser);
+        const updatedRoom = await roomQuery(req.foundRoom.id);
+        broadcastRoomJoin(roomUser, updatedRoom);
         res.json(roomUser);
     } catch (err) {
         next(new ResponseError(err.message, 500));
@@ -137,19 +114,7 @@ export const deleteLeaveRoom = async (
             throw new ResponseError('Could not leave room.', 500);
         }
         const updatedRoom = await roomQuery(req.roomUser.room.id);
-        wss.clients.forEach((client: Websocket) => {
-            if (client.user.id === req.user.id) {
-                client.rooms = client.rooms.filter(
-                    (room) => room.id !== req.roomUser.id
-                );
-                return client.send(
-                    JSON.stringify({ type: 'leftRoom', payload: req.roomUser })
-                );
-            }
-            client.send(
-                JSON.stringify({ type: 'roomUpdate', payload: updatedRoom })
-            );
-        });
+        broadcastRoomLeave(req.roomUser, updatedRoom);
         res.sendStatus(200);
     } catch (err) {
         next(new ResponseError(err.message, 500));

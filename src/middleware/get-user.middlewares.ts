@@ -15,3 +15,20 @@ export async function getUser(req: Request, _: Response, next: NextFunction) {
     req.user = user;
     next();
 }
+
+export async function getUserByUsernameOrEmail(
+    req: Request,
+    _: Response,
+    next: NextFunction
+) {
+    const { username, email } = req.body;
+    const user = await SqlDataSource.getRepository(User)
+        .createQueryBuilder('user')
+        .where('username = :username OR email = :email', {
+            username,
+            email,
+        })
+        .getOne();
+    req.foundUser = user;
+    next();
+}

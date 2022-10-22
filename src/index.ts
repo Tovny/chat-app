@@ -5,7 +5,7 @@ import { roomRouter } from './routes/room.routes';
 import { authRouter } from './routes/auth.routes';
 import { messageRouter } from './routes/message.routes';
 import { json } from 'body-parser';
-import { getUser } from './middleware/get-user.middleware';
+import { getUser } from './middleware/get-user.middlewares';
 import { errorHandler } from './middleware/handle-error.middleware';
 import { createServer, IncomingMessage } from 'http';
 import { WebSocketServer } from 'ws';

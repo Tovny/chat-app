@@ -9,8 +9,12 @@ import {
     putRoomMessage,
 } from '../controllers/message.controller';
 import { getRoomUser } from '../middleware/get-room-user.middleware';
-import { ResponseError } from '../utils/response-error.util';
 import { getUserMessage } from '../middleware/get-user-message.middleware';
+import { isRoomMember } from '../validators/room.validators';
+import {
+    doesUserMessageExist,
+    isValidMessageUpdate,
+} from '../validators/message.validators';
 
 export const messageRouter = Router();
 
@@ -23,16 +27,7 @@ messageRouter.get(
         query('take')
             .isInt()
             .withMessage('wrong take parameter.')
-            .custom((_, { req }) => {
-                if (!req.roomUser) {
-                    throw new ResponseError(
-                        'Not allowed to post in this room',
-                        403
-                    );
-                }
-
-                return true;
-            }),
+            .custom(isRoomMember('Not a room member.')),
     ]),
     getRoomMessages
 );
@@ -45,15 +40,7 @@ messageRouter.post(
         body('content')
             .isLength({ min: 1 })
             .withMessage('needs to be at least one character long.')
-            .custom((_, { req }) => {
-                if (!req.roomUser) {
-                    throw new ResponseError(
-                        'Not allowed to post in this room',
-                        403
-                    );
-                }
-                return true;
-            }),
+            .custom(isRoomMember('Not allowed to post in this room')),
     ]),
     postRoomMessage
 );
@@ -66,18 +53,9 @@ messageRouter.put(
         body('content')
             .isLength({ min: 1 })
             .withMessage('content needs to be at least one character long.')
-            .custom((content, { req }) => {
-                if (!req.message) {
-                    throw new ResponseError('Message not found.', 404);
-                }
-                if (req.message.content === content) {
-                    throw new ResponseError(
-                        'Can not use the same message.',
-                        403
-                    );
-                }
-                return true;
-            }),
+
+            .custom(doesUserMessageExist)
+            .custom(isValidMessageUpdate),
     ]),
     putRoomMessage
 );
@@ -86,14 +64,6 @@ messageRouter.delete(
     '/:id',
     requireAuth,
     getUserMessage,
-    validateInput([
-        param('id').custom((_, { req }) => {
-            if (!req.message) {
-                throw new ResponseError('Message not found.', 404);
-            }
-
-            return true;
-        }),
-    ]),
+    validateInput([param('id').custom(doesUserMessageExist)]),
     deleteRoomMessage
 );

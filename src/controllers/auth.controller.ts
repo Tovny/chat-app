@@ -3,7 +3,7 @@ import { NextFunction, Response } from 'express';
 import { sign } from 'jsonwebtoken';
 import { User } from '../entity/User.model';
 import { Request } from '../types';
-import { SqlDataSource } from '../utils/db.util';
+import { SqlDataSource } from '../config/db.config';
 import { ResponseError } from '../utils/response-error.util';
 
 export const postLogin = async (req: Request, res: Response) => {

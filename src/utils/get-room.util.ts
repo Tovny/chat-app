@@ -1,6 +1,6 @@
 import { Message } from '../entity/Message.model';
 import { Room } from '../entity/Room.model';
-import { SqlDataSource } from './db.util';
+import { SqlDataSource } from '../config/db.config';
 
 export const getRoom = async (id: string, limit = 10, skip = 0) => {
     const room = await SqlDataSource.getRepository(Room)

@@ -153,13 +153,17 @@ const tables = [userTable, roomTable, messageTable, roomUserTable];
 export class Initial1665232666748 implements MigrationInterface {
     public async up(queryRunner: QueryRunner): Promise<void> {
         Promise.all(
-            tables.map(async (table) => await queryRunner.createTable(table))
+            tables.map(
+                async (table) => await queryRunner.createTable(table, true)
+            )
         );
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
         Promise.all(
-            tables.map(async (table) => await queryRunner.dropTable(table))
+            tables.map(
+                async (table) => await queryRunner.dropTable(table, true)
+            )
         );
     }
 }

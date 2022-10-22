@@ -2,7 +2,7 @@ import { wss } from '..';
 import { RoomUser } from '../entity/RoomUser.model';
 import { User } from '../entity/User.model';
 import { Websocket } from '../types';
-import { SqlDataSource } from '../utils/db.util';
+import { SqlDataSource } from '../config/db.config';
 import { broadcastDisconnect } from './broadcast-disconnection.handler';
 import { broadcastConnection } from './broadcast-connection.handler';
 

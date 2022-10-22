@@ -1,7 +1,7 @@
 import { NextFunction, Response } from 'express';
 import { Message } from '../entity/Message.model';
 import { Request } from '../types';
-import { SqlDataSource } from '../utils/db.util';
+import { SqlDataSource } from '../config/db.config';
 
 export async function getUserMessage(
     req: Request,

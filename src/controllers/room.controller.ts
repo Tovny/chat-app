@@ -3,7 +3,7 @@ import { NextFunction, Response } from 'express';
 import { Room } from '../entity/Room.model';
 import { RoomUser } from '../entity/RoomUser.model';
 import { Request } from '../types';
-import { SqlDataSource } from '../utils/db.util';
+import { SqlDataSource } from '../config/db.config';
 import { getRoom as roomQuery } from '../utils/get-room.util';
 import { ResponseError } from '../utils/response-error.util';
 import {

@@ -1,7 +1,7 @@
 import { NextFunction, Response } from 'express';
 import { User } from '../entity/User.model';
 import { Request } from '../types';
-import { SqlDataSource } from '../utils/db.util';
+import { SqlDataSource } from '../config/db.config';
 import { decodeUserJwt } from '../utils/decode-user-jwt.util';
 import { client } from '../utils/redis.util';
 

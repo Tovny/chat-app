@@ -14,10 +14,10 @@ export const SqlDataSource = new DataSource({
     username: process.env.DB_USERNAME,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
-    synchronize: false,
+    synchronize: true,
     migrationsRun: false,
     logging: false,
-    entities: [User, Room, Message, RoomUser],
+    entities: [User, Room, RoomUser, Message],
     subscribers: [],
-    migrations: ['../migrations/**'],
+    migrations: ['../migrations/**.js'],
 });

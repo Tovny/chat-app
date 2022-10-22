@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import express from 'express';
-import { SqlDataSource } from './utils/db.util';
+import { SqlDataSource } from './config/db.config';
 import { roomRouter } from './routes/room.routes';
 import { authRouter } from './routes/auth.routes';
 import { messageRouter } from './routes/message.routes';

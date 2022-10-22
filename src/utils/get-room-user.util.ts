@@ -1,5 +1,5 @@
 import { RoomUser } from '../entity/RoomUser.model';
-import { SqlDataSource } from '../utils/db.util';
+import { SqlDataSource } from '../config/db.config';
 
 export const getRoomUserUtil = async ({
     userId,

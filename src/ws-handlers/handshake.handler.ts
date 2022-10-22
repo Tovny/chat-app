@@ -2,7 +2,7 @@ import { IncomingMessage } from 'http';
 import { Duplex } from 'stream';
 import { wss } from '..';
 import { User } from '../entity/User.model';
-import { SqlDataSource } from '../utils/db.util';
+import { SqlDataSource } from '../config/db.config';
 import { decodeUserJwt } from '../utils/decode-user-jwt.util';
 
 export const handshake = async (

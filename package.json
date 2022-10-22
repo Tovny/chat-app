@@ -5,7 +5,10 @@
   "main": "index.ts",
   "scripts": {
     "start": "tsc-watch --onSuccess \"node ./dist/index.js\"",
-    "typeorm": "typeorm-ts-node-esm"
+    "typeorm": "ts-node-dev ./node_modules/typeorm/cli.js",
+    "migration:up": "typeorm migration:run -d dist/config/db.config.js",
+    "migration:down": "typeorm migration:down -d dist/config/db.config.js"
+
   },
   "keywords": [],
   "author": "",

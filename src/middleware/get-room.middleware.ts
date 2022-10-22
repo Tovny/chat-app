@@ -1,6 +1,6 @@
 import { NextFunction, Response } from 'express';
 import { Request } from '../types';
-import { SqlDataSource } from '../utils/db.util';
+import { SqlDataSource } from '../config/db.config';
 import { Room } from '../entity/Room.model';
 
 export async function getRoomByName(

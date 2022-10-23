@@ -5,7 +5,7 @@ import { Websocket } from '../types';
 import { arrayIntersection } from '../utils/array-intersection';
 
 export const broadcastConnection = (ws: Websocket, room?: RoomUser) => {
-    if (!ws.rooms.length || room) {
+    if (!ws.rooms.length && !room) {
         return;
     }
     const onlineUsers = [ws.user];

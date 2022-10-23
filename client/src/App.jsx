@@ -93,6 +93,15 @@ const reducer = (state, action) => {
     if (action.type === 'resetCountChange') {
         return { ...state, countChange: 0 };
     }
+    if (action.type === 'addRoom') {
+        return { ...state, rooms: [...state.rooms, action.payload] };
+    }
+    if (action.type === 'updateRoom') {
+        if (state.room?.id !== action.payload?.id) {
+            return state;
+        }
+        return { ...state, room: action.payload };
+    }
 };
 
 function App() {
@@ -122,13 +131,12 @@ function App() {
                 return dispatch({ type: 'message', payload: data.payload });
             }
             if (data.type === 'roomUpdate') {
-                return dispatch({ type: 'setRoom', payload: data.payload });
+                return dispatch({ type: 'updateRoom', payload: data.payload });
             }
             if (data.type === 'joinedRoom') {
                 return dispatch({ type: 'room', payload: data.payload });
             }
             if (data.type === 'leftRoom') {
-                dispatch({ type: 'setRoom', payload: null });
                 return dispatch({ type: 'leftRoom', payload: data.payload });
             }
             if (data.type === 'messageEdit') {
@@ -137,6 +145,12 @@ function App() {
             if (data.type === 'messageDelete') {
                 return dispatch({
                     type: 'messageDelete',
+                    payload: data.payload,
+                });
+            }
+            if (data.type === 'roomJoin') {
+                return dispatch({
+                    type: 'addRoom',
                     payload: data.payload,
                 });
             }

@@ -5,7 +5,7 @@ export function JoinRoom() {
     const [name, setName] = useState('');
     const [password, setPassword] = useState('');
 
-    const { user, dispatch, rooms } = useContext(AppContext);
+    const { user } = useContext(AppContext);
 
     const handleJoin = (evt) => {
         evt.preventDefault();
@@ -16,15 +16,10 @@ export function JoinRoom() {
                 Authorization: `bearer token ${user}`,
             },
             body: JSON.stringify({ name, password }),
-        })
-            .then((data) => {
-                setName('');
-                setPassword('');
-                return data.json();
-            })
-            .then((room) => {
-                dispatch({ type: 'room', payload: room });
-            });
+        }).then(() => {
+            setName('');
+            setPassword('');
+        });
     };
 
     return (

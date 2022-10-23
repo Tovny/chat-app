@@ -93,6 +93,7 @@ export const postJoinRoom = async (
             room: req.foundRoom,
         });
         const roomUser = await repo.save(newRoomUser);
+        delete roomUser.user.password;
         const updatedRoom = await roomQuery(req.foundRoom.id);
         broadcastRoomJoin(roomUser, updatedRoom);
         res.json(roomUser);

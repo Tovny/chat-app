@@ -24,6 +24,9 @@ export function broadcastRoomJoin(roomUser: RoomUser, updatedRoom: Room) {
     wss.clients.forEach((client: Websocket) => {
         if (client.user.id === roomUser.user.id) {
             client.rooms.push(roomUser);
+            client.send(
+                JSON.stringify({ type: 'roomJoin', payload: roomUser })
+            );
             if (!userSocket) {
                 userSocket = client;
             }

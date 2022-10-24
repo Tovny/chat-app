@@ -15,6 +15,10 @@ export const decodeUserJwt = (
     if (!tokenData) {
         return undefined;
     }
-    const decoded = verify(tokenData, process.env.JWT_SECRET) as User;
-    return decoded;
+    try {
+        const decoded = verify(tokenData, process.env.JWT_SECRET) as User;
+        return decoded;
+    } catch(err) {
+        return undefined
+    }
 };

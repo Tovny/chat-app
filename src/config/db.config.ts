@@ -19,5 +19,5 @@ export const SqlDataSource = new DataSource({
     logging: false,
     entities: [User, Room, RoomUser, Message],
     subscribers: [],
-    migrations: ['../migrations/**.js'],
+    migrations: [],
 });

@@ -4,10 +4,12 @@
   "description": "",
   "main": "index.ts",
   "scripts": {
+    "build": "tsc --build",
     "start": "tsc-watch --onSuccess \"node ./dist/index.js\"",
+    "sync": "typeorm schema:sync -d dist/config/db.config.js",
     "typeorm": "ts-node-dev ./node_modules/typeorm/cli.js",
     "migration:up": "typeorm migration:run -d dist/config/db.config.js",
-    "migration:down": "typeorm migration:down -d dist/config/db.config.js"
+    "migration:down": "typeorm migration:revert -d dist/config/db.config.js"
 
   },
   "keywords": [],
